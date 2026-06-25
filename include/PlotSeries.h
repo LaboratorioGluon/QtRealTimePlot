@@ -63,12 +63,18 @@ public:
     QOpenGLBuffer &vbo() { return m_vbo; }
     void syncWithGPU();
 
+    std::vector<PlotSeries::Point> &getVisiblePoints(double xMin, double xMax, int targetWidth);
+    void uploadVisiblePoints(const std::vector<Point> &visiblePts);
+
+    int size() { return m_points.size(); }
+
 private:
     void updateBounds(const Point &p);
     void recomputeBounds();
 
     mutable std::mutex m_mutex;
     std::vector<Point> m_points;
+    std::vector<Point> m_visibleBuffer;
 
     QString m_name;
     QColor m_color;

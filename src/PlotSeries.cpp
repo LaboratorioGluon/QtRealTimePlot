@@ -67,13 +67,25 @@ void PlotSeries::initGLBuffers()
     m_vbo.create();
 
     m_vbo.bind();
-    // m_vbo.setUsagePattern(QOpenGLBuffer::StreamDraw);
-    m_vbo.setUsagePattern(QOpenGLBuffer::DynamicDraw);
-    size_t maxMemory = 10'000'000 * sizeof(Point);
-    m_vbo.allocate(nullptr, static_cast<int>(maxMemory));
+
+    m_vbo.setUsagePattern(QOpenGLBuffer::StreamDraw);
+
     m_vbo.release();
 
     m_glInitialized = true;
+}
+
+void PlotSeries::uploadVisiblePoints(const std::vector<Point> &visiblePts)
+{
+    if (!m_glInitialized || visiblePts.empty())
+        return;
+
+    m_vbo.bind();
+    // allocate() vacía el buffer anterior en la GPU y sube el nuevo tamaño exacto.
+    // Como visiblePts suele tener un tamaño máximo de ~4000 puntos (unos 64 KB),
+    // esta transferencia a través del PCIe tarda prácticamente 0 milisegundos.
+    m_vbo.allocate(visiblePts.data(), static_cast<int>(visiblePts.size() * sizeof(Point)));
+    m_vbo.release();
 }
 
 void PlotSeries::destroyGLBuffers()
@@ -125,4 +137,69 @@ void PlotSeries::syncWithGPU()
 
     // Actualizamos nuestro contador de control
     m_pointsInGPU = m_points.size();
+}
+
+std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double xMax, int targetWidth)
+{
+    std::lock_guard<std::mutex> lg(m_mutex);
+
+    m_visibleBuffer.clear();
+
+    if (m_points.empty() || targetWidth <= 0)
+        return m_visibleBuffer;
+
+    auto itStart = std::lower_bound(m_points.begin(), m_points.end(), xMin,
+                                    [](const Point &p, double val)
+                                    { return p.x < val; });
+    auto itEnd = std::upper_bound(m_points.begin(), m_points.end(), xMax,
+                                  [](double val, const Point &p)
+                                  { return val < p.x; });
+
+    size_t totalVisible = std::distance(itStart, itEnd);
+
+    // Si los puntos visibles caben de sobra en los píxeles de la pantalla, no reducimos nada
+    int maxPointsThreshold = targetWidth * 2;
+    if (totalVisible <= static_cast<size_t>(maxPointsThreshold))
+    {
+        m_visibleBuffer.assign(itStart, itEnd);
+        return m_visibleBuffer;
+    }
+
+    if (m_visibleBuffer.capacity() < static_cast<size_t>(maxPointsThreshold))
+    {
+        m_visibleBuffer.reserve(maxPointsThreshold);
+    }
+    double pointsPerBucket = static_cast<double>(totalVisible) / targetWidth;
+
+    for (int i = 0; i < targetWidth; ++i)
+    {
+        auto bucketStart = itStart + static_cast<size_t>(i * pointsPerBucket);
+        auto bucketEnd = itStart + static_cast<size_t>((i + 1) * pointsPerBucket);
+
+        if (bucketStart >= itEnd)
+            break;
+        if (bucketEnd > itEnd)
+            bucketEnd = itEnd;
+        if (bucketStart == bucketEnd)
+            continue;
+
+        // Buscamos el valor más alto y más bajo en esta columna de la pantalla
+        auto [minIt, maxIt] = std::minmax_element(bucketStart, bucketEnd,
+                                                  [](const Point &a, const Point &b)
+                                                  { return a.y < b.y; });
+
+        // Añadirlos respetando el orden cronológico original en el que llegaron de la UART
+        if (minIt < maxIt)
+        {
+            m_visibleBuffer.push_back(*minIt);
+            m_visibleBuffer.push_back(*maxIt);
+        }
+        else
+        {
+            m_visibleBuffer.push_back(*maxIt);
+            m_visibleBuffer.push_back(*minIt);
+        }
+    }
+
+    return m_visibleBuffer;
 }

@@ -117,8 +117,10 @@ void RealtimePlot::paintGL()
     glClearColor(m_bgColor.redF(), m_bgColor.greenF(), m_bgColor.blueF(), 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // qDebug() << "Pre draw: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
     drawGrid(area, xTicks, yTicks);
     drawSeries(area);
+    // qDebug() << "Post draw: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
     drawAxes(area, xTicks, yTicks);
 
     // QPainter pass for text / overlays
@@ -216,7 +218,7 @@ void RealtimePlot::paintGL()
     if (++frameCount % 30 == 0)
     {
         qDebug() << "Tiempo de paintGL():" << elapsed.count() << "ms"
-                 << "| FPS teóricos:" << (1000.0 / elapsed.count());
+                 << "| FPS teóricos:" << (1000.0 / elapsed.count()) << " | Punots: " << m_series[0]->size();
     }
 }
 
@@ -261,6 +263,8 @@ void RealtimePlot::drawGrid(const QRect &area,
 // ==========================================================================
 void RealtimePlot::drawSeries(const QRect &area)
 {
+
+    auto start = std::chrono::high_resolution_clock::now();
     if (!m_shaderReady || m_series.empty())
         return;
 
@@ -279,17 +283,26 @@ void RealtimePlot::drawSeries(const QRect &area)
                               (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
 
     int loc = m_shader->attributeLocation("a_position");
-
+    qDebug() << "Pre series: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
     for (const auto &s : m_series)
     {
-
+        start = std::chrono::high_resolution_clock::now();
         s->initGLBuffers();
+        qDebug() << "\tInit buffers: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
 
-        if (!s->visible() || s->vertexCount() < 2)
+        if (!s->visible())
             continue;
 
-        s->syncWithGPU();
+        start = std::chrono::high_resolution_clock::now();
+        std::vector<PlotSeries::Point> &visiblePts = s->getVisiblePoints(m_xMin, m_xMax, area.width());
+        if (visiblePts.size() < 2)
+            continue;
 
+        qDebug() << "\tgetVisible: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
+
+        start = std::chrono::high_resolution_clock::now();
+        s->uploadVisiblePoints(visiblePts);
+        qDebug() << "\tpload points: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
         m_shader->setUniformValue("u_color", (float)s->color().redF(), (float)s->color().greenF(),
                                   (float)s->color().blueF(), (float)s->color().alphaF());
         glLineWidth(s->lineWidth() * dpr);
@@ -299,12 +312,11 @@ void RealtimePlot::drawSeries(const QRect &area)
         s->vbo().bind();
 
         // Por seguridad, si el ID de localización dinámico no es cero, forzamos su asignación
-        auto *f = QOpenGLContext::currentContext()->functions();
-        f->glEnableVertexAttribArray(loc);
-        f->glVertexAttribPointer(loc, 2, GL_DOUBLE, GL_FALSE, sizeof(PlotSeries::Point), nullptr);
+        glEnableVertexAttribArray(loc);
+        glVertexAttribPointer(loc, 2, GL_DOUBLE, GL_FALSE, sizeof(PlotSeries::Point), nullptr);
 
         // 4. Pintar directamente desde la memoria de la tarjeta gráfica
-        glDrawArrays(GL_LINE_STRIP, 0, static_cast<GLsizei>(s->vertexCount()));
+        glDrawArrays(GL_LINE_STRIP, 0, static_cast<GLsizei>(visiblePts.size()));
 
         s->vao()->release();
         s->vbo().release();
