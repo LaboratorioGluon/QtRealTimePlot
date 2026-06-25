@@ -27,6 +27,12 @@ public:
         double y;
     };
 
+    struct LodLevel
+    {
+        std::vector<Point> points;
+        size_t lastProcessedCrudeSize = 0; // How many items have we already processed.
+    };
+
     explicit PlotSeries(QString name, QColor color = Qt::cyan);
 
     // --- Data ingestion (thread-safe) ---
@@ -75,6 +81,11 @@ private:
     mutable std::mutex m_mutex;
     std::vector<Point> m_points;
     std::vector<Point> m_visibleBuffer;
+
+    std::vector<LodLevel> m_lodLevels;
+    static constexpr size_t NUM_LOD_LEVELS = 3;
+    static constexpr size_t LOD_FACTOR = 100; // Factor de reducción por nivel
+    void updateLodLevels();
 
     QString m_name;
     QColor m_color;

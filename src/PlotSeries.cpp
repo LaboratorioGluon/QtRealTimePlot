@@ -5,6 +5,7 @@
 PlotSeries::PlotSeries(QString name, QColor color)
     : m_name(std::move(name)), m_color(color)
 {
+    m_lodLevels.resize(NUM_LOD_LEVELS);
 }
 
 void PlotSeries::pushPoint(double x, double y)
@@ -15,15 +16,28 @@ void PlotSeries::pushPoint(double x, double y)
 void PlotSeries::pushPoint(const Point &p)
 {
     std::lock_guard<std::mutex> lg(m_mutex);
+    m_lodLevels[0].points.push_back(p);
+    updateBounds(p);
 
     m_points.push_back(p);
     updateBounds(p);
+
+    if (m_lodLevels[0].points.size() - m_lodLevels[1].lastProcessedCrudeSize >= 1000)
+    {
+        updateLodLevels();
+    }
 }
 
 void PlotSeries::clear()
 {
     std::lock_guard<std::mutex> lg(m_mutex);
     m_points.clear();
+    for (auto &level : m_lodLevels)
+    {
+        level.points.clear();
+        level.lastProcessedCrudeSize = 0;
+    }
+    m_pointsInGPU = 0;
     m_xMin = std::numeric_limits<double>::max();
     m_xMax = -std::numeric_limits<double>::max();
     m_yMin = std::numeric_limits<double>::max();
@@ -147,11 +161,44 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
     if (m_points.empty() || targetWidth <= 0)
         return m_visibleBuffer;
 
-    // 1. Búsqueda binaria instantánea para acotar la pantalla
-    auto itStart = std::lower_bound(m_points.begin(), m_points.end(), xMin,
+    const_cast<PlotSeries *>(this)->updateLodLevels();
+
+    const auto &crudePoints = m_lodLevels[0].points;
+    auto itStartCrude = std::lower_bound(crudePoints.begin(), crudePoints.end(), xMin,
+                                         [](const Point &p, double val)
+                                         { return p.x < val; });
+    auto itEndCrude = std::upper_bound(crudePoints.begin(), crudePoints.end(), xMax,
+                                       [](double val, const Point &p)
+                                       { return val < p.x; });
+
+    size_t totalVisibleCrude = std::distance(itStartCrude, itEndCrude);
+    if (totalVisibleCrude == 0)
+        return m_visibleBuffer;
+
+    size_t selectedLevel = 0;
+    double pointsPerPixel = static_cast<double>(totalVisibleCrude) / targetWidth;
+
+    if (pointsPerPixel > 10000.0)
+    {
+        selectedLevel = 2; // Gran cantidad de datos (Zoom Out total) -> LOD 2 (x100)
+    }
+    else if (pointsPerPixel > 50.0)
+    {
+        selectedLevel = 1; // Transición suave -> LOD 1 (x10)
+    }
+    else
+    {
+        selectedLevel = 0; // Máxima fidelidad -> LOD 0 (Dato crudo)
+    }
+
+    qDebug() << "Level: " << selectedLevel << " Visible: " << totalVisibleCrude << "Density: " << pointsPerPixel;
+
+    const auto &sourcePoints = m_lodLevels[selectedLevel].points;
+
+    auto itStart = std::lower_bound(sourcePoints.begin(), sourcePoints.end(), xMin,
                                     [](const Point &p, double val)
                                     { return p.x < val; });
-    auto itEnd = std::upper_bound(m_points.begin(), m_points.end(), xMax,
+    auto itEnd = std::upper_bound(sourcePoints.begin(), sourcePoints.end(), xMax,
                                   [](double val, const Point &p)
                                   { return val < p.x; });
 
@@ -176,6 +223,8 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
     if (xRange <= 0)
         return m_visibleBuffer;
 
+    double inverseXRangeWithWidth = static_cast<double>(targetWidth) / xRange;
+
     // Estructura para llevar el control de cada columna de píxel (bucket)
     struct BucketData
     {
@@ -197,8 +246,7 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
     for (auto it = itStart; it != itEnd; ++it)
     {
         // Calculamos a qué píxel horizontal (columna) pertenece matemáticamente este punto
-        double factor = (it->x - xMin) / xRange;
-        int pixelIdx = static_cast<int>(factor * targetWidth);
+        int pixelIdx = static_cast<int>((it->x - xMin) * inverseXRangeWithWidth);
 
         // Control de límites por seguridad decimal
         if (pixelIdx < 0)
@@ -241,4 +289,70 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
     }
 
     return m_visibleBuffer;
+}
+
+void PlotSeries::updateLodLevels()
+{
+    // ─── NIVEL 1: Procesa desde el Nivel 0 (Crudo) ───
+    auto &crude = m_lodLevels[0].points;
+    auto &lod1 = m_lodLevels[1].points;
+    size_t startIdx = m_lodLevels[1].lastProcessedCrudeSize;
+    size_t endIdx = crude.size() - (crude.size() % LOD_FACTOR); // Bloques completos de 10
+
+    for (size_t i = startIdx; i < endIdx; i += LOD_FACTOR)
+    {
+        // Buscamos el min y max del bloque de 10 elementos
+        size_t minIdx = i;
+        size_t maxIdx = i;
+        for (size_t k = 1; k < LOD_FACTOR; ++k)
+        {
+            if (crude[i + k].y < crude[minIdx].y)
+                minIdx = i + k;
+            if (crude[i + k].y > crude[maxIdx].y)
+                maxIdx = i + k;
+        }
+        // Los insertamos manteniendo orden cronológico aproximado en X
+        if (minIdx < maxIdx)
+        {
+            lod1.push_back(crude[minIdx]);
+            lod1.push_back(crude[maxIdx]);
+        }
+        else
+        {
+            lod1.push_back(crude[maxIdx]);
+            lod1.push_back(crude[minIdx]);
+        }
+    }
+    m_lodLevels[1].lastProcessedCrudeSize = endIdx;
+
+    // ─── NIVEL 2: Procesa desde el Nivel 1 ───
+    auto &lod2 = m_lodLevels[2].points;
+    size_t startIdx2 = m_lodLevels[2].lastProcessedCrudeSize;
+    // Como Lod1 mete 2 puntos por bloque, el paso es (LOD_FACTOR * 2) si procesamos sobre la misma base
+    // Pero lo más fácil es tratar a Lod1 como un vector normal y colapsar cada 10 puntos (5 parejas) en MinMax
+    size_t endIdx2 = lod1.size() - (lod1.size() % LOD_FACTOR);
+
+    for (size_t i = startIdx2; i < endIdx2; i += LOD_FACTOR)
+    {
+        size_t minIdx = i;
+        size_t maxIdx = i;
+        for (size_t k = 1; k < LOD_FACTOR; ++k)
+        {
+            if (lod1[i + k].y < lod1[minIdx].y)
+                minIdx = i + k;
+            if (lod1[i + k].y > lod1[maxIdx].y)
+                maxIdx = i + k;
+        }
+        if (minIdx < maxIdx)
+        {
+            lod2.push_back(lod1[minIdx]);
+            lod2.push_back(lod1[maxIdx]);
+        }
+        else
+        {
+            lod2.push_back(lod1[maxIdx]);
+            lod2.push_back(lod1[minIdx]);
+        }
+    }
+    m_lodLevels[2].lastProcessedCrudeSize = endIdx2;
 }

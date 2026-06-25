@@ -33,7 +33,7 @@ public:
             for (int i = 0; i < 100; ++i)
             {
                 double v1 = std::sin(2 * M_PI * 10.0 * t) + 0.3 * std::sin(2 * M_PI * 53.7 * t);
-                double v2 = std::cos(2 * M_PI * 5.0 * t) * std::exp(-0.1 * std::fmod(t, 3.0));
+                double v2 = 5 * std::cos(2 * M_PI * 5.0 * t / 100) * std::exp(-0.1 * std::fmod(t, 3.0));
                 double v3 = 0.5 * std::sin(2 * M_PI * 1.0 * t) + 0.1 * (static_cast<double>(rand()) / RAND_MAX - 0.5);
 
                 ch1->pushPoint(t, v1);

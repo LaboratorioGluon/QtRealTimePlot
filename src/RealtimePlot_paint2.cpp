@@ -218,7 +218,7 @@ void RealtimePlot::paintGL()
     if (++frameCount % 30 == 0)
     {
         qDebug() << "Tiempo de paintGL():" << elapsed.count() << "ms"
-                 << "| FPS teóricos:" << (1000.0 / elapsed.count()) << " | Punots: " << m_series[0]->size();
+                 << "| FPS teóricos:" << (1000.0 / elapsed.count()) << " | Puntos: " << m_series[0]->size();
     }
 }
 
@@ -239,19 +239,17 @@ void RealtimePlot::drawGrid(const QRect &area,
 
     for (const auto &t : xTicks)
     {
-        float px = (float)dataToPixel(t.value, 0).x();
-        verts.push_back(px * dpr);
-        verts.push_back((float)area.top() * dpr);
-        verts.push_back(px * dpr);
-        verts.push_back((float)area.bottom() * dpr);
+        verts.push_back((float)t.value);
+        verts.push_back((float)m_yMin);
+        verts.push_back((float)t.value);
+        verts.push_back((float)m_yMax);
     }
     for (const auto &t : yTicks)
     {
-        float py = (float)dataToPixel(0, t.value).y();
-        verts.push_back((float)area.left() * dpr);
-        verts.push_back(py * dpr);
-        verts.push_back((float)area.right() * dpr);
-        verts.push_back(py * dpr);
+        verts.push_back((float)m_xMin);
+        verts.push_back((float)t.value);
+        verts.push_back((float)m_xMax);
+        verts.push_back((float)t.value);
     }
 
     // Grid lines are line SEGMENTS, not a strip; draw as GL_LINES
@@ -283,26 +281,26 @@ void RealtimePlot::drawSeries(const QRect &area)
                               (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
 
     int loc = m_shader->attributeLocation("a_position");
-    qDebug() << "Pre series: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
+    // qDebug() << "Pre series: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
     for (const auto &s : m_series)
     {
-        start = std::chrono::high_resolution_clock::now();
+        // start = std::chrono::high_resolution_clock::now();
         s->initGLBuffers();
-        qDebug() << "\tInit buffers: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
+        // qDebug() << "\tInit buffers: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
 
         if (!s->visible())
             continue;
 
-        start = std::chrono::high_resolution_clock::now();
+        // start = std::chrono::high_resolution_clock::now();
         std::vector<PlotSeries::Point> &visiblePts = s->getVisiblePoints(m_xMin, m_xMax, area.width());
         if (visiblePts.size() < 2)
             continue;
 
-        qDebug() << "\tgetVisible: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
+        // qDebug() << "\tgetVisible: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
 
-        start = std::chrono::high_resolution_clock::now();
+        // start = std::chrono::high_resolution_clock::now();
         s->uploadVisiblePoints(visiblePts);
-        qDebug() << "\tpload points: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
+        // qDebug() << "\tpload points: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
         m_shader->setUniformValue("u_color", (float)s->color().redF(), (float)s->color().greenF(),
                                   (float)s->color().blueF(), (float)s->color().alphaF());
         glLineWidth(s->lineWidth() * dpr);
@@ -334,34 +332,36 @@ void RealtimePlot::drawAxes(const QRect &area,
                             const QVector<PlotAxis::Tick> &yTicks)
 {
 
-    // const float dpr = static_cast<float>(devicePixelRatioF());
-    const float dpr = 1;
+    const float dpr = static_cast<float>(devicePixelRatioF());
+
     // Plot border
     std::vector<float> border = {
-        (float)area.left() * dpr, (float)area.top() * dpr,
-        (float)area.right() * dpr, (float)area.top() * dpr,
-        (float)area.right() * dpr, (float)area.bottom() * dpr,
-        (float)area.left() * dpr, (float)area.bottom() * dpr,
-        (float)area.left() * dpr, (float)area.top() * dpr};
-    drawLineStrip(border, m_axisColor, 1.5f);
+        (float)m_xMin, (float)m_yMax,
+        (float)m_xMax, (float)m_yMax,
+        (float)m_xMax, (float)m_yMin,
+        (float)m_xMin, (float)m_yMin,
+        (float)m_xMin, (float)m_yMax};
+    drawLineStrip(border, m_axisColor, 1.5f * dpr);
 
     // Tick marks as line segments
     std::vector<float> ticks;
+
+    double xTickSize = (m_xMax - m_xMin) / (area.width() > 0 ? area.width() : 1) * 5.0;
+    double yTickSize = (m_yMax - m_yMin) / (area.height() > 0 ? area.height() : 1) * 5.0;
+
     for (const auto &t : xTicks)
     {
-        float px = (float)dataToPixel(t.value, 0).x();
-        ticks.push_back(px * dpr);
-        ticks.push_back((float)area.bottom() * dpr);
-        ticks.push_back(px * dpr);
-        ticks.push_back((float)(area.bottom() + 5) * dpr);
+        ticks.push_back((float)t.value);
+        ticks.push_back((float)m_yMin);
+        ticks.push_back((float)t.value);
+        ticks.push_back((float)(m_yMin - yTickSize)); // Hacia abajo del eje X
     }
     for (const auto &t : yTicks)
     {
-        float py = (float)dataToPixel(0, t.value).y();
-        ticks.push_back((float)(area.left() - 5) * dpr);
-        ticks.push_back(py * dpr);
-        ticks.push_back((float)area.left() * dpr);
-        ticks.push_back(py * dpr);
+        ticks.push_back((float)m_xMin);
+        ticks.push_back((float)t.value);
+        ticks.push_back((float)(m_xMin - xTickSize)); // Hacia la izquierda del eje Y
+        ticks.push_back((float)t.value);
     }
     drawLines(ticks, m_axisColor, 1.0f * dpr);
 }
@@ -427,6 +427,9 @@ void RealtimePlot::drawLineStrip(const std::vector<float> &verts,
     m_shader->setUniformValue("u_color",
                               (float)color.redF(), (float)color.greenF(),
                               (float)color.blueF(), (float)color.alphaF());
+    m_shader->setUniformValue("u_plot_limits", (float)m_xMin, (float)m_xMax, (float)m_yMin, (float)m_yMax);
+    m_shader->setUniformValue("u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
+                              (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
 
     int loc = m_shader->attributeLocation("a_position");
     m_shader->enableAttributeArray(loc);
@@ -455,6 +458,9 @@ void RealtimePlot::drawLines(const std::vector<float> &verts,
     m_shader->setUniformValue("u_color",
                               (float)color.redF(), (float)color.greenF(),
                               (float)color.blueF(), (float)color.alphaF());
+    m_shader->setUniformValue("u_plot_limits", (float)m_xMin, (float)m_xMax, (float)m_yMin, (float)m_yMax);
+    m_shader->setUniformValue("u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
+                              (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
 
     int loc = m_shader->attributeLocation("a_position");
     m_shader->enableAttributeArray(loc);
