@@ -142,12 +142,12 @@ void PlotSeries::syncWithGPU()
 std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double xMax, int targetWidth)
 {
     std::lock_guard<std::mutex> lg(m_mutex);
-
     m_visibleBuffer.clear();
 
     if (m_points.empty() || targetWidth <= 0)
         return m_visibleBuffer;
 
+    // 1. Búsqueda binaria instantánea para acotar la pantalla
     auto itStart = std::lower_bound(m_points.begin(), m_points.end(), xMin,
                                     [](const Point &p, double val)
                                     { return p.x < val; });
@@ -156,8 +156,9 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
                                   { return val < p.x; });
 
     size_t totalVisible = std::distance(itStart, itEnd);
+    if (totalVisible == 0)
+        return m_visibleBuffer;
 
-    // Si los puntos visibles caben de sobra en los píxeles de la pantalla, no reducimos nada
     int maxPointsThreshold = targetWidth * 2;
     if (totalVisible <= static_cast<size_t>(maxPointsThreshold))
     {
@@ -169,35 +170,73 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
     {
         m_visibleBuffer.reserve(maxPointsThreshold);
     }
-    double pointsPerBucket = static_cast<double>(totalVisible) / targetWidth;
 
-    for (int i = 0; i < targetWidth; ++i)
+    // 2. ─── MÁXIMA OPTIMIZACIÓN: ALGORITMO DE UNA SOLA PASADA ───
+    double xRange = xMax - xMin;
+    if (xRange <= 0)
+        return m_visibleBuffer;
+
+    // Estructura para llevar el control de cada columna de píxel (bucket)
+    struct BucketData
     {
-        auto bucketStart = itStart + static_cast<size_t>(i * pointsPerBucket);
-        auto bucketEnd = itStart + static_cast<size_t>((i + 1) * pointsPerBucket);
+        Point minPt;
+        Point maxPt;
+        bool assigned = false;
+    };
 
-        if (bucketStart >= itEnd)
-            break;
-        if (bucketEnd > itEnd)
-            bucketEnd = itEnd;
-        if (bucketStart == bucketEnd)
-            continue;
+    // Usamos un vector temporal estático/local para los píxeles (tamaño fijo muy pequeño, ej: 1920)
+    static std::vector<BucketData> buckets;
+    if (buckets.size() != static_cast<size_t>(targetWidth))
+    {
+        buckets.resize(targetWidth);
+    }
+    for (int i = 0; i < targetWidth; ++i)
+        buckets[i].assigned = false;
 
-        // Buscamos el valor más alto y más bajo en esta columna de la pantalla
-        auto [minIt, maxIt] = std::minmax_element(bucketStart, bucketEnd,
-                                                  [](const Point &a, const Point &b)
-                                                  { return a.y < b.y; });
+    // Clasificamos los 1.4M de puntos en su píxel correspondiente en un único bucle plano
+    for (auto it = itStart; it != itEnd; ++it)
+    {
+        // Calculamos a qué píxel horizontal (columna) pertenece matemáticamente este punto
+        double factor = (it->x - xMin) / xRange;
+        int pixelIdx = static_cast<int>(factor * targetWidth);
 
-        // Añadirlos respetando el orden cronológico original en el que llegaron de la UART
-        if (minIt < maxIt)
+        // Control de límites por seguridad decimal
+        if (pixelIdx < 0)
+            pixelIdx = 0;
+        if (pixelIdx >= targetWidth)
+            pixelIdx = targetWidth - 1;
+
+        BucketData &b = buckets[pixelIdx];
+        if (!b.assigned)
         {
-            m_visibleBuffer.push_back(*minIt);
-            m_visibleBuffer.push_back(*maxIt);
+            b.minPt = *it;
+            b.maxPt = *it;
+            b.assigned = true;
         }
         else
         {
-            m_visibleBuffer.push_back(*maxIt);
-            m_visibleBuffer.push_back(*minIt);
+            if (it->y < b.minPt.y)
+                b.minPt = *it;
+            if (it->y > b.maxPt.y)
+                b.maxPt = *it;
+        }
+    }
+
+    // 3. Volcar los resultados respetando el orden temporal básico
+    for (int i = 0; i < targetWidth; ++i)
+    {
+        if (!buckets[i].assigned)
+            continue;
+
+        if (buckets[i].minPt.x < buckets[i].maxPt.x)
+        {
+            m_visibleBuffer.push_back(buckets[i].minPt);
+            m_visibleBuffer.push_back(buckets[i].maxPt);
+        }
+        else
+        {
+            m_visibleBuffer.push_back(buckets[i].maxPt);
+            m_visibleBuffer.push_back(buckets[i].minPt);
         }
     }
 
