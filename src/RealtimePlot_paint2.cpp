@@ -3,6 +3,7 @@
 #include <QOpenGLShaderProgram>
 #include <algorithm>
 #include <cmath>
+#include <chrono>
 
 // ==========================================================================
 //  Vertex / Fragment shaders
@@ -58,6 +59,9 @@ void RealtimePlot::resizeGL(int /*w*/, int /*h*/)
 // ==========================================================================
 void RealtimePlot::paintGL()
 {
+
+    auto start = std::chrono::high_resolution_clock::now();
+
     // Auto-scroll: shift X window to follow newest data
     if (m_autoScroll && !m_series.empty())
     {
@@ -180,6 +184,20 @@ void RealtimePlot::paintGL()
     }
 
     painter.end();
+
+    glFinish();
+
+    // 3. Calcular la diferencia de tiempo
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+
+    // 4. Imprimir en la consola de Qt de forma controlada (ej: cada 30 frames para no saturar)
+    static int frameCount = 0;
+    if (++frameCount % 30 == 0)
+    {
+        qDebug() << "Tiempo de paintGL():" << elapsed.count() << "ms"
+                 << "| FPS teóricos:" << (1000.0 / elapsed.count());
+    }
 }
 
 // ==========================================================================
@@ -249,7 +267,6 @@ void RealtimePlot::drawSeries(const QRect &area)
             verts.push_back((float)px.x() * dpr);
             verts.push_back((float)px.y() * dpr);
         }
-
         drawLineStrip(verts, s->color(), s->lineWidth());
     }
 

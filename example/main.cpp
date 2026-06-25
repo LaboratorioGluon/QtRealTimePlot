@@ -42,7 +42,7 @@ public:
                 t += dt;
             }
             // Sleep ~10 ms between bursts → ~100 bursts/s → 1000 pts/s total
-            QThread::msleep(10);
+            QThread::msleep(5);
         }
     }
 };
