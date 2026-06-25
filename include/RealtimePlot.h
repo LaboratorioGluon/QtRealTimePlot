@@ -66,6 +66,15 @@ public:
         int left = 72, right = 18, top = 28, bottom = 52;
     };
 
+    enum class CursorType
+    {
+        None,
+        X1,
+        X2,
+        Y1,
+        Y2
+    };
+
     // ------------------------------------------------------------------ ctor
     explicit RealtimePlot(QWidget *parent = nullptr);
     ~RealtimePlot() override;
@@ -105,7 +114,10 @@ public:
     void setLegendVisible(bool v) { m_legendVisible = v; }
 
     /** Auto-scroll follows the newest data on the X axis. */
-    void setAutoScroll(bool v) { m_autoScroll = v; }
+    void setAutoScroll(bool v)
+    {
+        m_autoScroll = v;
+    }
     /** X-axis window width in data units when auto-scrolling. */
     void setAutoScrollWindow(double w) { m_scrollWindow = w; }
 
@@ -139,6 +151,7 @@ private:
                   const QVector<PlotAxis::Tick> &xTicks,
                   const QVector<PlotAxis::Tick> &yTicks);
     void drawLegend(const QRect &area, QPainter &painter);
+    void drawCursorH(QPainter &painter);
 
     // GL primitives (pixel-space coords)
     void drawLineStrip(const std::vector<float> &verts, QColor color, float width);
@@ -181,4 +194,27 @@ private:
     QTimer *m_timer = nullptr;
     QOpenGLShaderProgram *m_shader = nullptr;
     bool m_shaderReady = false;
+
+    // --- Cursors ---
+    double m_cursorX1 = 0.0;
+    double m_cursorX2 = 0.0;
+    double m_cursorY1 = 0.0;
+    double m_cursorY2 = 0.0;
+
+    QRect m_rectLabelX1;
+    QRect m_rectLabelX2;
+    QRect m_rectLabelY1;
+    QRect m_rectLabelY2;
+
+    double m_cursorDeltaX = 0.0;
+    double m_cursorDeltaY = 0.0;
+
+    QFont m_cursorFont;
+
+    bool m_showXCursors = true;
+    bool m_showYCursors = false;
+
+    // Gestión del arrastre
+    CursorType m_activeCursor = CursorType::None;
+    const int m_clickTolerancePixels = 7;
 };

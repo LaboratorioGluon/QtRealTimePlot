@@ -73,6 +73,7 @@ public:
     void uploadVisiblePoints(const std::vector<Point> &visiblePts);
 
     int size() { return m_points.size(); }
+    PlotSeries::Point getClosestPointToX(double xValue);
 
 private:
     void updateBounds(const Point &p);

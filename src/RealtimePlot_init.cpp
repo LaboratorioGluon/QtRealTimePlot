@@ -36,8 +36,9 @@ RealtimePlot::RealtimePlot(QWidget *parent)
     setFocusPolicy(Qt::StrongFocus);
     setMouseTracking(true);
 
-    m_tickFont = QFont("Monospace", 8);
+    m_tickFont = QFont("Monospace", 12);
     m_labelFont = QFont("Sans", 9, QFont::Bold);
+    m_cursorFont = QFont("Monospace", 12);
 
     connect(m_timer, &QTimer::timeout, this, QOverload<>::of(&RealtimePlot::update));
 }

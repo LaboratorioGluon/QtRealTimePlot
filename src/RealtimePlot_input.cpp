@@ -35,20 +35,13 @@ void RealtimePlot::wheelEvent(QWheelEvent *event)
 // --------------------------------------------------------------------------
 void RealtimePlot::applyZoom(double factor, QPoint anchor)
 {
-    // Pivot en el espacio de datos matemáticos reales
     QPointF dataAnchor = pixelToData(anchor);
-
-    // Si factor > 1 (Zoom Out), el rango se expande multiplicando por factor.
-    // Si factor < 1 (Zoom In), el rango se contrae.
-    // Nota: Tu wheelEvent ya calcula el factor invertido correctamente vía std::pow
 
     if (m_zoomMode == ZoomMode::XY || m_zoomMode == ZoomMode::XOnly)
     {
-        // Calculamos las distancias actuales desde los extremos al ratón
         double distLeft = dataAnchor.x() - m_xMin;
         double distRight = m_xMax - dataAnchor.x();
 
-        // Escalamos ambas distancias de forma idéntica respecto al pivote
         m_xMin = dataAnchor.x() - distLeft / factor;
         m_xMax = dataAnchor.x() + distRight / factor;
     }
@@ -71,29 +64,69 @@ void RealtimePlot::applyZoom(double factor, QPoint anchor)
 // ==========================================================================
 void RealtimePlot::mousePressEvent(QMouseEvent *event)
 {
+    QPoint pos = event->pos();
     const QRect area = plotArea();
 
-    if (event->button() == Qt::LeftButton && area.contains(event->pos()))
+    if (m_showXCursors)
+    {
+        int px1 = dataToPixel(m_cursorX1, m_yMin).x();
+        int px2 = dataToPixel(m_cursorX2, m_yMin).x();
+
+        // Comprobamos línea O caja de texto
+        if (std::abs(pos.x() - px1) <= m_clickTolerancePixels || m_rectLabelX1.contains(pos))
+        {
+            m_activeCursor = CursorType::X1;
+            m_cursorDeltaX = m_cursorX1 - pixelToData(pos).x();
+        }
+        else if (std::abs(pos.x() - px2) <= m_clickTolerancePixels || m_rectLabelX2.contains(pos))
+        {
+            m_activeCursor = CursorType::X2;
+            m_cursorDeltaX = m_cursorX2 - pixelToData(pos).x();
+        }
+    }
+
+    if (m_showYCursors && m_activeCursor == CursorType::None)
+    {
+        int py1 = dataToPixel(m_xMin, m_cursorY1).y();
+        int py2 = dataToPixel(m_xMin, m_cursorY2).y();
+
+        if (std::abs(pos.y() - py1) <= m_clickTolerancePixels || m_rectLabelY1.contains(pos))
+        {
+            m_activeCursor = CursorType::Y1;
+        }
+        else if (std::abs(pos.y() - py2) <= m_clickTolerancePixels || m_rectLabelY2.contains(pos))
+        {
+            m_activeCursor = CursorType::Y2;
+        }
+    }
+
+    if (m_activeCursor != CursorType::None)
+    {
+        event->accept();
+        return;
+    }
+
+    if (event->button() == Qt::LeftButton && area.contains(pos))
     {
         // Left drag = pan
         m_panning = true;
         m_selecting = false;
-        m_lastMousePos = event->pos();
+        m_lastMousePos = pos;
         setCursor(Qt::ClosedHandCursor);
     }
-    else if (event->button() == Qt::RightButton && area.contains(event->pos()))
+    else if (event->button() == Qt::RightButton && area.contains(pos))
     {
         // Right drag = box-zoom selection
         m_selecting = true;
         m_panning = false;
-        m_selStart = event->pos();
-        m_selEnd = event->pos();
+        m_selStart = pos;
+        m_selEnd = pos;
         setCursor(Qt::CrossCursor);
     }
     else if (event->button() == Qt::MiddleButton)
     {
         m_panning = true;
-        m_lastMousePos = event->pos();
+        m_lastMousePos = pos;
         setCursor(Qt::ClosedHandCursor);
     }
 
@@ -105,6 +138,54 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
 // ==========================================================================
 void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
 {
+    QPoint pos = event->pos();
+
+    bool overCursor = false;
+
+    if (m_showXCursors)
+    {
+        int px1 = dataToPixel(m_cursorX1, m_yMin).x();
+        int px2 = dataToPixel(m_cursorX2, m_yMin).x();
+
+        if (std::abs(pos.x() - px1) <= m_clickTolerancePixels || m_rectLabelX1.contains(pos) ||
+            std::abs(pos.x() - px2) <= m_clickTolerancePixels || m_rectLabelX2.contains(pos))
+        {
+            setCursor(Qt::SizeHorCursor);
+            overCursor = true;
+        }
+    }
+
+    if (m_showYCursors && !overCursor)
+    {
+        int py1 = dataToPixel(m_xMin, m_cursorY1).y();
+        int py2 = dataToPixel(m_xMin, m_cursorY2).y();
+
+        if (std::abs(pos.y() - py1) <= m_clickTolerancePixels || m_rectLabelY1.contains(pos) ||
+            std::abs(pos.y() - py2) <= m_clickTolerancePixels || m_rectLabelY2.contains(pos))
+        {
+            setCursor(Qt::SizeVerCursor);
+            overCursor = true;
+        }
+    }
+
+    if (m_activeCursor != CursorType::None)
+    {
+        QPointF dataPos = pixelToData(pos);
+
+        if (m_activeCursor == CursorType::X1)
+            m_cursorX1 = dataPos.x() + m_cursorDeltaX;
+        else if (m_activeCursor == CursorType::X2)
+            m_cursorX2 = dataPos.x() + m_cursorDeltaX;
+        else if (m_activeCursor == CursorType::Y1)
+            m_cursorY1 = dataPos.y();
+        else if (m_activeCursor == CursorType::Y2)
+            m_cursorY2 = dataPos.y();
+
+        update(); // Forzar repintado inmediato
+        event->accept();
+        return;
+    }
+
     if (m_panning)
     {
         QPoint delta = event->pos() - m_lastMousePos;
@@ -134,6 +215,10 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
         m_selEnd = event->pos();
         update();
     }
+    else if (!overCursor)
+    {
+        setCursor(Qt::ArrowCursor);
+    }
 
     event->accept();
 }
@@ -147,6 +232,14 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent *event)
     {
         m_panning = false;
         setCursor(Qt::ArrowCursor);
+    }
+
+    if (m_activeCursor != CursorType::None)
+    {
+        m_activeCursor = CursorType::None;
+        unsetCursor();
+        event->accept();
+        return;
     }
 
     if (m_selecting && event->button() == Qt::RightButton)

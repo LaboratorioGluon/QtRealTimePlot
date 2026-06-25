@@ -95,9 +95,6 @@ void PlotSeries::uploadVisiblePoints(const std::vector<Point> &visiblePts)
         return;
 
     m_vbo.bind();
-    // allocate() vacía el buffer anterior en la GPU y sube el nuevo tamaño exacto.
-    // Como visiblePts suele tener un tamaño máximo de ~4000 puntos (unos 64 KB),
-    // esta transferencia a través del PCIe tarda prácticamente 0 milisegundos.
     m_vbo.allocate(visiblePts.data(), static_cast<int>(visiblePts.size() * sizeof(Point)));
     m_vbo.release();
 }
@@ -131,25 +128,21 @@ void PlotSeries::syncWithGPU()
     if (!m_glInitialized || m_points.empty())
         return;
     if (m_points.size() == m_pointsInGPU)
-        return; // Nada nuevo que subir
+        return;
 
     size_t newPointsCount = m_points.size() - m_pointsInGPU;
 
     m_vbo.bind();
 
-    // Calculamos el offset en bytes a partir del último punto que ya subimos
     int offsetBytes = static_cast<int>(m_pointsInGPU * sizeof(Point));
     int sizeBytes = static_cast<int>(newPointsCount * sizeof(Point));
 
-    // Obtenemos el puntero directo a los datos nuevos en la RAM
     const Point *dataPtr = &m_points[m_pointsInGPU];
 
-    // Subimos de golpe solo el bloque de datos nuevos de forma segura
     m_vbo.write(offsetBytes, dataPtr, sizeBytes);
 
     m_vbo.release();
 
-    // Actualizamos nuestro contador de control
     m_pointsInGPU = m_points.size();
 }
 
@@ -180,18 +173,18 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
 
     if (pointsPerPixel > 10000.0)
     {
-        selectedLevel = 2; // Gran cantidad de datos (Zoom Out total) -> LOD 2 (x100)
+        selectedLevel = 2;
     }
-    else if (pointsPerPixel > 50.0)
+    else if (pointsPerPixel > 100.0)
     {
-        selectedLevel = 1; // Transición suave -> LOD 1 (x10)
+        selectedLevel = 1;
     }
     else
     {
-        selectedLevel = 0; // Máxima fidelidad -> LOD 0 (Dato crudo)
+        selectedLevel = 0;
     }
 
-    qDebug() << "Level: " << selectedLevel << " Visible: " << totalVisibleCrude << "Density: " << pointsPerPixel;
+    // qDebug() << "Level: " << selectedLevel << " Visible: " << totalVisibleCrude << "Density: " << pointsPerPixel;
 
     const auto &sourcePoints = m_lodLevels[selectedLevel].points;
 
@@ -218,14 +211,12 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
         m_visibleBuffer.reserve(maxPointsThreshold);
     }
 
-    // 2. ─── MÁXIMA OPTIMIZACIÓN: ALGORITMO DE UNA SOLA PASADA ───
     double xRange = xMax - xMin;
     if (xRange <= 0)
         return m_visibleBuffer;
 
     double inverseXRangeWithWidth = static_cast<double>(targetWidth) / xRange;
 
-    // Estructura para llevar el control de cada columna de píxel (bucket)
     struct BucketData
     {
         Point minPt;
@@ -233,7 +224,6 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
         bool assigned = false;
     };
 
-    // Usamos un vector temporal estático/local para los píxeles (tamaño fijo muy pequeño, ej: 1920)
     static std::vector<BucketData> buckets;
     if (buckets.size() != static_cast<size_t>(targetWidth))
     {
@@ -242,13 +232,11 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
     for (int i = 0; i < targetWidth; ++i)
         buckets[i].assigned = false;
 
-    // Clasificamos los 1.4M de puntos en su píxel correspondiente en un único bucle plano
     for (auto it = itStart; it != itEnd; ++it)
     {
-        // Calculamos a qué píxel horizontal (columna) pertenece matemáticamente este punto
+
         int pixelIdx = static_cast<int>((it->x - xMin) * inverseXRangeWithWidth);
 
-        // Control de límites por seguridad decimal
         if (pixelIdx < 0)
             pixelIdx = 0;
         if (pixelIdx >= targetWidth)
@@ -270,7 +258,6 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
         }
     }
 
-    // 3. Volcar los resultados respetando el orden temporal básico
     for (int i = 0; i < targetWidth; ++i)
     {
         if (!buckets[i].assigned)
@@ -293,15 +280,14 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
 
 void PlotSeries::updateLodLevels()
 {
-    // ─── NIVEL 1: Procesa desde el Nivel 0 (Crudo) ───
+
     auto &crude = m_lodLevels[0].points;
     auto &lod1 = m_lodLevels[1].points;
     size_t startIdx = m_lodLevels[1].lastProcessedCrudeSize;
-    size_t endIdx = crude.size() - (crude.size() % LOD_FACTOR); // Bloques completos de 10
+    size_t endIdx = crude.size() - (crude.size() % LOD_FACTOR);
 
     for (size_t i = startIdx; i < endIdx; i += LOD_FACTOR)
     {
-        // Buscamos el min y max del bloque de 10 elementos
         size_t minIdx = i;
         size_t maxIdx = i;
         for (size_t k = 1; k < LOD_FACTOR; ++k)
@@ -311,7 +297,6 @@ void PlotSeries::updateLodLevels()
             if (crude[i + k].y > crude[maxIdx].y)
                 maxIdx = i + k;
         }
-        // Los insertamos manteniendo orden cronológico aproximado en X
         if (minIdx < maxIdx)
         {
             lod1.push_back(crude[minIdx]);
@@ -325,11 +310,8 @@ void PlotSeries::updateLodLevels()
     }
     m_lodLevels[1].lastProcessedCrudeSize = endIdx;
 
-    // ─── NIVEL 2: Procesa desde el Nivel 1 ───
     auto &lod2 = m_lodLevels[2].points;
     size_t startIdx2 = m_lodLevels[2].lastProcessedCrudeSize;
-    // Como Lod1 mete 2 puntos por bloque, el paso es (LOD_FACTOR * 2) si procesamos sobre la misma base
-    // Pero lo más fácil es tratar a Lod1 como un vector normal y colapsar cada 10 puntos (5 parejas) en MinMax
     size_t endIdx2 = lod1.size() - (lod1.size() % LOD_FACTOR);
 
     for (size_t i = startIdx2; i < endIdx2; i += LOD_FACTOR)
@@ -355,4 +337,35 @@ void PlotSeries::updateLodLevels()
         }
     }
     m_lodLevels[2].lastProcessedCrudeSize = endIdx2;
+}
+
+PlotSeries::Point PlotSeries::getClosestPointToX(double xValue)
+{
+    if (m_lodLevels[0].points.empty())
+        return Point{0.0, 0.0};
+
+    auto it = std::lower_bound(m_lodLevels[0].points.begin(), m_lodLevels[0].points.end(), xValue,
+                               [](const Point &pt, double val)
+                               {
+                                   return pt.x < val;
+                               });
+
+    if (it == m_lodLevels[0].points.begin())
+        return m_lodLevels[0].points.front();
+    if (it == m_lodLevels[0].points.end())
+        return m_lodLevels[0].points.back();
+
+    auto prevIt = std::prev(it);
+
+    double distCurrent = std::abs(it->x - xValue);
+    double distPrev = std::abs(prevIt->x - xValue);
+
+    if (distPrev < distCurrent)
+    {
+        return *prevIt;
+    }
+    else
+    {
+        return *it;
+    }
 }
