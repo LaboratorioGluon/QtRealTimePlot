@@ -6,13 +6,19 @@
 #include <mutex>
 #include <limits>
 
+#include <GL/gl.h>
+
+#include <QOpenGLFunctions>
+#include <QOpenGLBuffer>
+#include <QOpenGLVertexArrayObject>
+
 /**
  * @brief Thread-safe circular buffer for a single plot series.
  *
  * Stores (x, y) pairs with a configurable max capacity.
  * Data can be pushed from any thread; rendering reads under lock.
  */
-class PlotSeries
+class PlotSeries : protected QOpenGLFunctions
 {
 public:
     struct Point
@@ -48,6 +54,15 @@ public:
     double yMin() const { return m_yMin; }
     double yMax() const { return m_yMax; }
 
+    // VBO for OpenGL
+    void initGLBuffers();
+    void destroyGLBuffers();
+    void updateVBO();
+    QOpenGLVertexArrayObject *vao() { return &m_vao; }
+    size_t vertexCount() const { return m_points.size(); }
+    QOpenGLBuffer &vbo() { return m_vbo; }
+    void syncWithGPU();
+
 private:
     void updateBounds(const Point &p);
     void recomputeBounds();
@@ -64,4 +79,9 @@ private:
     double m_xMax = -std::numeric_limits<double>::max();
     double m_yMin = std::numeric_limits<double>::max();
     double m_yMax = -std::numeric_limits<double>::max();
+
+    QOpenGLBuffer m_vbo{QOpenGLBuffer::VertexBuffer};
+    QOpenGLVertexArrayObject m_vao;
+    bool m_glInitialized = false;
+    size_t m_pointsInGPU = 0;
 };

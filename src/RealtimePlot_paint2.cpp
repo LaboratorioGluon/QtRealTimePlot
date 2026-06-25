@@ -13,9 +13,29 @@
 static const char *kVertSrc = R"GLSL(
     attribute vec2 a_position;
     uniform   vec2 u_viewport;   // (width, height) in pixels
+    uniform   vec4 u_plot_limits;// (xmin, xMax, yMin, yMax)
+    uniform   vec4 u_margins;     // (left, right, top, bottom) 
     void main() {
-        float ndcX =  (a_position.x / u_viewport.x) * 2.0 - 1.0;
-        float ndcY = -((a_position.y / u_viewport.y) * 2.0 - 1.0);
+
+        float xMin = u_plot_limits.x;
+        float xMax = u_plot_limits.y;
+        float yMin = u_plot_limits.z;
+        float yMax = u_plot_limits.w;
+
+        float mLeft   = u_margins.x;
+        float mRight  = u_margins.y;
+        float mTop    = u_margins.z;
+        float mBottom = u_margins.w;
+
+        float plotWidth  = u_viewport.x - mLeft - mRight;
+        float plotHeight = u_viewport.y - mTop - mBottom;
+
+        float pixelX = mLeft + ((a_position.x - xMin) / (xMax - xMin)) * plotWidth;
+        float pixelY = mTop + (1.0 - (a_position.y - yMin) / (yMax - yMin)) * plotHeight;
+
+        float ndcX =  (pixelX / u_viewport.x) * 2.0 - 1.0;
+        float ndcY = -((pixelY / u_viewport.y) * 2.0 - 1.0);
+
         gl_Position = vec4(ndcX, ndcY, 0.0, 1.0);
     }
 )GLSL";
@@ -241,6 +261,9 @@ void RealtimePlot::drawGrid(const QRect &area,
 // ==========================================================================
 void RealtimePlot::drawSeries(const QRect &area)
 {
+    if (!m_shaderReady || m_series.empty())
+        return;
+
     glEnable(GL_SCISSOR_TEST);
     const float dpr = static_cast<float>(devicePixelRatioF());
     // OpenGL Y is bottom-up; area.bottom() is the largest Y pixel (bottom of rect)
@@ -248,28 +271,46 @@ void RealtimePlot::drawSeries(const QRect &area)
               (height() - area.bottom() - 1) * dpr,
               area.width() * dpr,
               area.height() * dpr);
+    m_shader->bind();
+
+    m_shader->setUniformValue("u_viewport", (float)width() * dpr, (float)height() * dpr);
+    m_shader->setUniformValue("u_plot_limits", (float)m_xMin, (float)m_xMax, (float)m_yMin, (float)m_yMax);
+    m_shader->setUniformValue("u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
+                              (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
+
+    int loc = m_shader->attributeLocation("a_position");
 
     for (const auto &s : m_series)
     {
-        if (!s->visible())
-            continue;
-        auto lk = s->lock();
-        const auto &pts = s->points();
-        if (pts.size() < 2)
+
+        s->initGLBuffers();
+
+        if (!s->visible() || s->vertexCount() < 2)
             continue;
 
-        // Convert data → pixel space on CPU
-        std::vector<float> verts;
-        verts.reserve(pts.size() * 2);
-        for (const auto &p : pts)
-        {
-            QPoint px = dataToPixel(p.x, p.y);
-            verts.push_back((float)px.x() * dpr);
-            verts.push_back((float)px.y() * dpr);
-        }
-        drawLineStrip(verts, s->color(), s->lineWidth());
+        s->syncWithGPU();
+
+        m_shader->setUniformValue("u_color", (float)s->color().redF(), (float)s->color().greenF(),
+                                  (float)s->color().blueF(), (float)s->color().alphaF());
+        glLineWidth(s->lineWidth() * dpr);
+
+        // 3. Enlazar el VAO (Esto activa el VBO y configura el puntero de atributos automáticamente)
+        s->vao()->bind();
+        s->vbo().bind();
+
+        // Por seguridad, si el ID de localización dinámico no es cero, forzamos su asignación
+        auto *f = QOpenGLContext::currentContext()->functions();
+        f->glEnableVertexAttribArray(loc);
+        f->glVertexAttribPointer(loc, 2, GL_DOUBLE, GL_FALSE, sizeof(PlotSeries::Point), nullptr);
+
+        // 4. Pintar directamente desde la memoria de la tarjeta gráfica
+        glDrawArrays(GL_LINE_STRIP, 0, static_cast<GLsizei>(s->vertexCount()));
+
+        s->vao()->release();
+        s->vbo().release();
     }
 
+    m_shader->release();
     glDisable(GL_SCISSOR_TEST);
 }
 
@@ -281,7 +322,8 @@ void RealtimePlot::drawAxes(const QRect &area,
                             const QVector<PlotAxis::Tick> &yTicks)
 {
 
-    const float dpr = static_cast<float>(devicePixelRatioF());
+    // const float dpr = static_cast<float>(devicePixelRatioF());
+    const float dpr = 1;
     // Plot border
     std::vector<float> border = {
         (float)area.left() * dpr, (float)area.top() * dpr,
