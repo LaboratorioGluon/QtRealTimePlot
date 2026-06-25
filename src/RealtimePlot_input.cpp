@@ -8,11 +8,11 @@
 // ==========================================================================
 //  Wheel zoom
 // ==========================================================================
-void RealtimePlot::wheelEvent(QWheelEvent* event)
+void RealtimePlot::wheelEvent(QWheelEvent *event)
 {
     // Zoom factor: 1.15 per 120-unit step (one notch)
-    double delta   = event->angleDelta().y();
-    double factor  = std::pow(1.15, delta / 120.0);
+    double delta = event->angleDelta().y();
+    double factor = std::pow(1.15, delta / 120.0);
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QPoint anchor = event->position().toPoint();
@@ -21,37 +21,45 @@ void RealtimePlot::wheelEvent(QWheelEvent* event)
 #endif
 
     // Only zoom if cursor is inside the plot area
-    if (!plotArea().contains(anchor)) {
+    if (!plotArea().contains(anchor))
+    {
         event->ignore();
         return;
     }
 
     applyZoom(factor, anchor);
-    m_autoScroll = false;  // disable auto-scroll when user zooms
+    m_autoScroll = false; // disable auto-scroll when user zooms
     event->accept();
 }
 
 // --------------------------------------------------------------------------
 void RealtimePlot::applyZoom(double factor, QPoint anchor)
 {
-    // Pivot in data space
+    // Pivot en el espacio de datos matemáticos reales
     QPointF dataAnchor = pixelToData(anchor);
 
-    if (m_zoomMode == ZoomMode::XY || m_zoomMode == ZoomMode::XOnly) {
-        double halfW = (m_xMax - m_xMin) / (2.0 * factor);
-        double cx    = dataAnchor.x();
-        // Clamp anchor so we don't over-scroll
-        cx = std::max(m_xMin + halfW, std::min(m_xMax - halfW, cx));
-        m_xMin = cx - halfW;
-        m_xMax = cx + halfW;
+    // Si factor > 1 (Zoom Out), el rango se expande multiplicando por factor.
+    // Si factor < 1 (Zoom In), el rango se contrae.
+    // Nota: Tu wheelEvent ya calcula el factor invertido correctamente vía std::pow
+
+    if (m_zoomMode == ZoomMode::XY || m_zoomMode == ZoomMode::XOnly)
+    {
+        // Calculamos las distancias actuales desde los extremos al ratón
+        double distLeft = dataAnchor.x() - m_xMin;
+        double distRight = m_xMax - dataAnchor.x();
+
+        // Escalamos ambas distancias de forma idéntica respecto al pivote
+        m_xMin = dataAnchor.x() - distLeft / factor;
+        m_xMax = dataAnchor.x() + distRight / factor;
     }
 
-    if (m_zoomMode == ZoomMode::XY || m_zoomMode == ZoomMode::YOnly) {
-        double halfH = (m_yMax - m_yMin) / (2.0 * factor);
-        double cy    = dataAnchor.y();
-        cy = std::max(m_yMin + halfH, std::min(m_yMax - halfH, cy));
-        m_yMin = cy - halfH;
-        m_yMax = cy + halfH;
+    if (m_zoomMode == ZoomMode::XY || m_zoomMode == ZoomMode::YOnly)
+    {
+        double distBottom = dataAnchor.y() - m_yMin;
+        double distTop = m_yMax - dataAnchor.y();
+
+        m_yMin = dataAnchor.y() - distBottom / factor;
+        m_yMax = dataAnchor.y() + distTop / factor;
     }
 
     emitViewChanged();
@@ -61,27 +69,30 @@ void RealtimePlot::applyZoom(double factor, QPoint anchor)
 // ==========================================================================
 //  Mouse press
 // ==========================================================================
-void RealtimePlot::mousePressEvent(QMouseEvent* event)
+void RealtimePlot::mousePressEvent(QMouseEvent *event)
 {
     const QRect area = plotArea();
 
-    if (event->button() == Qt::LeftButton && area.contains(event->pos())) {
+    if (event->button() == Qt::LeftButton && area.contains(event->pos()))
+    {
         // Left drag = pan
-        m_panning     = true;
-        m_selecting   = false;
+        m_panning = true;
+        m_selecting = false;
         m_lastMousePos = event->pos();
         setCursor(Qt::ClosedHandCursor);
     }
-    else if (event->button() == Qt::RightButton && area.contains(event->pos())) {
+    else if (event->button() == Qt::RightButton && area.contains(event->pos()))
+    {
         // Right drag = box-zoom selection
-        m_selecting   = true;
-        m_panning     = false;
-        m_selStart    = event->pos();
-        m_selEnd      = event->pos();
+        m_selecting = true;
+        m_panning = false;
+        m_selStart = event->pos();
+        m_selEnd = event->pos();
         setCursor(Qt::CrossCursor);
     }
-    else if (event->button() == Qt::MiddleButton) {
-        m_panning      = true;
+    else if (event->button() == Qt::MiddleButton)
+    {
+        m_panning = true;
         m_lastMousePos = event->pos();
         setCursor(Qt::ClosedHandCursor);
     }
@@ -92,24 +103,34 @@ void RealtimePlot::mousePressEvent(QMouseEvent* event)
 // ==========================================================================
 //  Mouse move
 // ==========================================================================
-void RealtimePlot::mouseMoveEvent(QMouseEvent* event)
+void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
 {
-    if (m_panning) {
+    if (m_panning)
+    {
         QPoint delta = event->pos() - m_lastMousePos;
         m_lastMousePos = event->pos();
 
         const QRect area = plotArea();
         double dx = -delta.x() * (m_xMax - m_xMin) / area.width();
-        double dy =  delta.y() * (m_yMax - m_yMin) / area.height();
+        double dy = delta.y() * (m_yMax - m_yMin) / area.height();
 
-        if (m_zoomMode != ZoomMode::YOnly) { m_xMin += dx; m_xMax += dx; }
-        if (m_zoomMode != ZoomMode::XOnly) { m_yMin += dy; m_yMax += dy; }
+        if (m_zoomMode != ZoomMode::YOnly)
+        {
+            m_xMin += dx;
+            m_xMax += dx;
+        }
+        if (m_zoomMode != ZoomMode::XOnly)
+        {
+            m_yMin += dy;
+            m_yMax += dy;
+        }
 
         m_autoScroll = false;
         emitViewChanged();
         update();
     }
-    else if (m_selecting) {
+    else if (m_selecting)
+    {
         m_selEnd = event->pos();
         update();
     }
@@ -120,27 +141,31 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent* event)
 // ==========================================================================
 //  Mouse release
 // ==========================================================================
-void RealtimePlot::mouseReleaseEvent(QMouseEvent* event)
+void RealtimePlot::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (m_panning) {
+    if (m_panning)
+    {
         m_panning = false;
         setCursor(Qt::ArrowCursor);
     }
 
-    if (m_selecting && event->button() == Qt::RightButton) {
+    if (m_selecting && event->button() == Qt::RightButton)
+    {
         m_selecting = false;
         setCursor(Qt::ArrowCursor);
 
         QRect sel = QRect(m_selStart, m_selEnd).normalized();
 
         // Minimum selection size (avoid accidental micro-zooms)
-        if (sel.width() < 8 || sel.height() < 8) {
+        if (sel.width() < 8 || sel.height() < 8)
+        {
             update();
             return;
         }
 
         // Only zoom to selection box if inside plot area
-        if (plotArea().intersects(sel)) {
+        if (plotArea().intersects(sel))
+        {
             QPointF dataTL = pixelToData(sel.topLeft());
             QPointF dataBR = pixelToData(sel.bottomRight());
 
@@ -149,8 +174,16 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent* event)
             double newYmin = std::min(dataTL.y(), dataBR.y());
             double newYmax = std::max(dataTL.y(), dataBR.y());
 
-            if (m_zoomMode != ZoomMode::YOnly) { m_xMin = newXmin; m_xMax = newXmax; }
-            if (m_zoomMode != ZoomMode::XOnly) { m_yMin = newYmin; m_yMax = newYmax; }
+            if (m_zoomMode != ZoomMode::YOnly)
+            {
+                m_xMin = newXmin;
+                m_xMax = newXmax;
+            }
+            if (m_zoomMode != ZoomMode::XOnly)
+            {
+                m_yMin = newYmin;
+                m_yMax = newYmax;
+            }
 
             m_autoScroll = false;
             emitViewChanged();
@@ -165,9 +198,10 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent* event)
 // ==========================================================================
 //  Double-click → auto-fit
 // ==========================================================================
-void RealtimePlot::mouseDoubleClickEvent(QMouseEvent* event)
+void RealtimePlot::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton) {
+    if (event->button() == Qt::LeftButton)
+    {
         autoFit();
         update();
     }
@@ -177,9 +211,10 @@ void RealtimePlot::mouseDoubleClickEvent(QMouseEvent* event)
 // ==========================================================================
 //  Keyboard shortcuts
 // ==========================================================================
-void RealtimePlot::keyPressEvent(QKeyEvent* event)
+void RealtimePlot::keyPressEvent(QKeyEvent *event)
 {
-    switch (event->key()) {
+    switch (event->key())
+    {
     case Qt::Key_F:
     case Qt::Key_Space:
         autoFit();

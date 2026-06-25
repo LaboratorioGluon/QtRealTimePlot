@@ -91,6 +91,7 @@ public:
     ZoomMode zoomMode() const { return m_zoomMode; }
 
     void setGrid(const GridStyle &g) { m_grid = g; }
+    GridStyle getGrid() { return m_grid; }
     void setMargins(const MarginPx &m) { m_margin = m; }
 
     void setBackgroundColor(QColor c) { m_bgColor = c; }

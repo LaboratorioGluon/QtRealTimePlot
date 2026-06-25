@@ -98,6 +98,8 @@ public:
         btnScroll->setCheckable(true);
         btnScroll->setChecked(true);
 
+        auto *btnGrid = new QPushButton("Grid", this);
+
         auto *lblHelp = new QLabel(
             "<small>🖱 Wheel = zoom  |  Left drag = pan  |  Right drag = box-zoom  |  Dbl-click = fit</small>",
             this);
@@ -108,8 +110,12 @@ public:
         hlay->addSpacing(12);
         hlay->addWidget(btnFit);
         hlay->addWidget(btnScroll);
+        hlay->addWidget(btnGrid);
         hlay->addStretch();
         hlay->addWidget(lblHelp);
+
+        connect(btnGrid, &QPushButton::clicked, this, [this](bool)
+                { this->m_plot->setGrid({!this->m_plot->getGrid().enabled, this->m_plot->getGrid().color}); });
 
         connect(btnFit, &QPushButton::clicked, m_plot, &RealtimePlot::autoFit);
         connect(btnScroll, &QPushButton::toggled, this, [this, btnScroll](bool on)

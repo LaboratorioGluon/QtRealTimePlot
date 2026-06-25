@@ -113,6 +113,10 @@ void RealtimePlot::paintGL()
     auto xTicks = PlotAxis::computeTicks(m_xMin, m_xMax, std::max(3, area.width() / 80));
     auto yTicks = PlotAxis::computeTicks(m_yMin, m_yMax, std::max(3, area.height() / 50));
 
+    int fontSize = 12;
+    m_tickFont.setPointSize(fontSize);
+    m_labelFont.setPointSize(fontSize + 2);
+
     // Clear
     glClearColor(m_bgColor.redF(), m_bgColor.greenF(), m_bgColor.blueF(), 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
