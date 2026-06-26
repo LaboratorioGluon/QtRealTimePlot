@@ -82,25 +82,10 @@ void RealtimePlot::paintGL()
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Auto-scroll: shift X window to follow newest data
-    if (m_autoScroll && !m_series.empty())
+    if (m_zoomAuto)
     {
-        double xNewest = -1e300;
-        for (const auto &s : m_series)
-        {
-            if (s->visible() && !s->points().empty())
-            {
-                auto lk = s->lock();
-                xNewest = std::max(xNewest, s->xMax());
-            }
-        }
-        if (xNewest > -1e300)
-        {
-            m_xMax = xNewest;
-            m_xMin = xNewest - m_scrollWindow;
-        }
+        autoFit();
     }
-
     // Auto-init view on first paint
     if (!m_viewInitialized)
     {
@@ -180,8 +165,7 @@ void RealtimePlot::paintGL()
     }
 
     // Legend
-    if (m_legendVisible)
-        drawLegend(area, painter);
+    m_legend.draw(painter, plotArea());
 
     // Box-zoom selection rectangle
     if (m_selecting)
@@ -373,52 +357,6 @@ void RealtimePlot::drawAxes(const QRect &area,
 }
 
 // ==========================================================================
-//  Legend
-// ==========================================================================
-void RealtimePlot::drawLegend(const QRect &area, QPainter &painter)
-{
-    int visCount = 0;
-    for (const auto &s : m_series)
-        if (s->visible())
-            ++visCount;
-    if (visCount == 0)
-        return;
-
-    painter.setFont(m_tickFont);
-
-    const int lineH = 18;
-    const int padding = 8;
-    const int swatch = 20;
-    const int boxW = 140;
-    const int boxH = visCount * lineH + padding * 2;
-    const int boxX = area.right() - boxW - 6;
-    const int boxY = area.top() + 6;
-
-    painter.setPen(QPen(m_axisColor, 1));
-    painter.setBrush(QColor(m_bgColor.red(), m_bgColor.green(),
-                            m_bgColor.blue(), 210));
-    painter.drawRect(boxX, boxY, boxW, boxH);
-
-    int row = 0;
-    for (const auto &s : m_series)
-    {
-        if (!s->visible())
-            continue;
-        int y = boxY + padding + row * lineH;
-        painter.setPen(QPen(s->color(), 2.5f));
-        painter.drawLine(boxX + 6, y + lineH / 2, boxX + 6 + swatch, y + lineH / 2);
-        painter.setPen(m_textColor);
-        QString label = s->name();
-        if (label.length() > 15)
-            label = label.left(14) + "…";
-        painter.drawText(boxX + 6 + swatch + 5, y,
-                         boxW - swatch - 14, lineH,
-                         Qt::AlignLeft | Qt::AlignVCenter, label);
-        ++row;
-    }
-}
-
-// ==========================================================================
 //  Low-level GL: line strip (connected)
 // ==========================================================================
 void RealtimePlot::drawLineStrip(const std::vector<float> &verts,
@@ -493,12 +431,16 @@ void RealtimePlot::drawCursorH(QPainter &painter)
     if (m_showXCursors)
     {
 
+        // padding * 2 + actual line height + inter line (2px)
+        int padding = 4;
+        double boxHeight = padding * 2 + lineHeight * (m_series.size() + 1) + (m_series.size() - 1) * 2;
+
         painter.setPen(cursorPen);
         int px1 = dataToPixel(m_cursorX1, m_yMin).x();
         int px2 = dataToPixel(m_cursorX2, m_yMin).x();
         QRect plotRect = plotArea();
 
-        if (px1 < px2)
+        if ((px1 < px2) && (px1 >= plotRect.left()) && (px2 <= plotRect.right()))
         {
             painter.setPen(QPen(QColor(255, 200, 50, 200), 0, Qt::SolidLine));
             painter.setBrush(QColor(255, 200, 50, 30));
@@ -511,12 +453,12 @@ void RealtimePlot::drawCursorH(QPainter &painter)
             painter.setPen(QPen(QColor(255, 200, 50, 200), 1, Qt::SolidLine));
             painter.drawLine(px1, plotRect.top(), px1, plotRect.bottom());
 
-            m_rectLabelX1 = QRect(px1, plotRect.top() + 5, -120, lineHeight * (m_series.size() + 1) + 4).normalized();
+            m_rectLabelX1 = QRect(px1, plotRect.top() + 5, -120, boxHeight).normalized();
 
             painter.setBrush(QColor(10, 10, 10, 255));
 
             painter.drawRect(m_rectLabelX1);
-            painter.drawText(QRect(px1 - 4, plotRect.top() + 5, -120, lineHeight).normalized(),
+            painter.drawText(QRect(px1 - 4, plotRect.top() + 5 + padding, -120, lineHeight).normalized(),
                              Qt::AlignRight | Qt::AlignTop,
                              QString("X1: %1").arg(m_cursorX1, 0, 'f', 2));
 
@@ -524,7 +466,7 @@ void RealtimePlot::drawCursorH(QPainter &painter)
             for (auto &s : m_series)
             {
                 painter.setPen(s->color());
-                painter.drawText(QRect(px1 - 4, plotRect.top() + 5 + lineHeight * index++, -120, lineHeight).normalized(),
+                painter.drawText(QRect(px1 - 4, plotRect.top() + 5 + padding + (lineHeight + 2) * index++, -120, lineHeight).normalized(),
                                  Qt::AlignRight | Qt::AlignTop,
                                  QString("%1").arg(s->getClosestPointToX(m_cursorX1).y, 0, 'f', 2));
             }
@@ -537,21 +479,24 @@ void RealtimePlot::drawCursorH(QPainter &painter)
         // Cursor X2
         if (px2 >= plotRect.left() && px2 <= plotRect.right())
         {
+            int padding = 4;
+            double boxHeight = padding * 2 + lineHeight * (m_series.size() + 1) + (m_series.size() - 1) * 2;
+
             painter.setPen(QPen(QColor(255, 200, 50, 200), 1, Qt::SolidLine));
             painter.drawLine(px2, plotRect.top(), px2, plotRect.bottom());
 
-            m_rectLabelX2 = QRect(px2, plotRect.top() + 5, 120, lineHeight * (m_series.size() + 1) + 4);
+            m_rectLabelX2 = QRect(px2, plotRect.top() + 5, 120, boxHeight);
             painter.setBrush(QColor(10, 10, 10, 255));
 
             painter.drawRect(m_rectLabelX2);
-            painter.drawText(QRect(px2 - 4, plotRect.top() + 5, 120, lineHeight),
+            painter.drawText(QRect(px2 - 4, plotRect.top() + 5 + padding, 120, lineHeight),
                              Qt::AlignRight | Qt::AlignTop,
                              QString("X2: %1").arg(m_cursorX2, 0, 'f', 2));
             int index = 1;
             for (auto &s : m_series)
             {
                 painter.setPen(s->color());
-                painter.drawText(QRect(px2 - 4, plotRect.top() + 5 + lineHeight * index++, 120, lineHeight),
+                painter.drawText(QRect(px2 - 4, plotRect.top() + 5 + padding + (lineHeight + 2) * index++, 120, lineHeight),
                                  Qt::AlignRight | Qt::AlignTop,
                                  QString("%1").arg(s->getClosestPointToX(m_cursorX2).y, 0, 'f', 2));
             }

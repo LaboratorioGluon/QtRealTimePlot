@@ -14,6 +14,7 @@
 
 #include "PlotSeries.h"
 #include "PlotAxis.h"
+#include "components/RtpLegend.h"
 
 /**
  * @brief High-performance real-time plot widget using OpenGL.
@@ -83,6 +84,7 @@ public:
     std::shared_ptr<PlotSeries> addSeries(const QString &name,
                                           QColor color = Qt::cyan,
                                           size_t maxPoints = 10000);
+    void addSeries(std::shared_ptr<PlotSeries> serie);
     void removeSeries(const std::shared_ptr<PlotSeries> &series);
     void clearSeries();
 
@@ -111,15 +113,11 @@ public:
     void setXLabel(const QString &l) { m_xLabel = l; }
     void setYLabel(const QString &l) { m_yLabel = l; }
 
+    void enableCursors(bool enableCursor1, bool enableCursor2) { m_showXCursors = enableCursor1; }
+
     void setLegendVisible(bool v) { m_legendVisible = v; }
 
-    /** Auto-scroll follows the newest data on the X axis. */
-    void setAutoScroll(bool v)
-    {
-        m_autoScroll = v;
-    }
-    /** X-axis window width in data units when auto-scrolling. */
-    void setAutoScrollWindow(double w) { m_scrollWindow = w; }
+    void setAutoZoom(bool a) { m_zoomAuto = a; }
 
 signals:
     void viewChanged(double xMin, double xMax, double yMin, double yMax);
@@ -150,7 +148,6 @@ private:
     void drawAxes(const QRect &area,
                   const QVector<PlotAxis::Tick> &xTicks,
                   const QVector<PlotAxis::Tick> &yTicks);
-    void drawLegend(const QRect &area, QPainter &painter);
     void drawCursorH(QPainter &painter);
 
     // GL primitives (pixel-space coords)
@@ -181,8 +178,7 @@ private:
 
     // --- Behavior ---
     ZoomMode m_zoomMode = ZoomMode::XY;
-    bool m_autoScroll = false;
-    double m_scrollWindow = 10.0;
+    bool m_zoomAuto = true;
 
     // --- Interaction ---
     bool m_panning = false;
@@ -217,4 +213,6 @@ private:
     // Gestión del arrastre
     CursorType m_activeCursor = CursorType::None;
     const int m_clickTolerancePixels = 7;
+
+    RtpLegend m_legend;
 };

@@ -27,8 +27,9 @@ add_library(realtimeplot STATIC
     src/PlotSeries.cpp
     src/PlotAxis.cpp
     src/RealtimePlot_init.cpp
-    src/RealtimePlot_paint2.cpp     # consolidated paint with correct shader
+    src/RealtimePlot_paint2.cpp
     src/RealtimePlot_input.cpp
+    src/components/RtpLegend.cpp
 )
 
 target_include_directories(realtimeplot

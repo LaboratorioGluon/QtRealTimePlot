@@ -70,6 +70,7 @@ public:
     void syncWithGPU();
 
     std::vector<PlotSeries::Point> &getVisiblePoints(double xMin, double xMax, int targetWidth);
+    std::vector<PlotSeries::Point> &getDataPoints(uint32_t lod = 0) { return m_lodLevels[lod].points; }
     void uploadVisiblePoints(const std::vector<Point> &visiblePts);
 
     int size() { return m_points.size(); }

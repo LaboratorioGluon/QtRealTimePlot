@@ -10,25 +10,40 @@
 // ==========================================================================
 void RealtimePlot::wheelEvent(QWheelEvent *event)
 {
-    // Zoom factor: 1.15 per 120-unit step (one notch)
-    double delta = event->angleDelta().y();
-    double factor = std::pow(1.15, delta / 120.0);
+    QPoint pos = event->position().toPoint();
+    QRect rectArea = plotArea();
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    QPoint anchor = event->position().toPoint();
-#else
-    QPoint anchor = event->pos();
-#endif
+    ZoomMode modoOriginal = m_zoomMode;
 
-    // Only zoom if cursor is inside the plot area
-    if (!plotArea().contains(anchor))
+    if (pos.x() >= rectArea.left() && pos.x() <= rectArea.right() && pos.y() > rectArea.bottom())
     {
+
+        m_zoomMode = ZoomMode::XOnly;
+    }
+    else if (pos.x() < rectArea.left() && pos.y() >= rectArea.top() && pos.y() <= rectArea.bottom())
+    {
+
+        m_zoomMode = ZoomMode::YOnly;
+    }
+    else if (rectArea.contains(pos))
+    {
+
+        m_zoomMode = modoOriginal;
+    }
+    else
+    {
+
         event->ignore();
         return;
     }
 
-    applyZoom(factor, anchor);
-    m_autoScroll = false; // disable auto-scroll when user zooms
+    double angleDelta = event->angleDelta().y();
+    double factor = (angleDelta > 0) ? 0.85 : 1.15;
+
+    applyZoom(factor, pos);
+
+    m_zoomMode = modoOriginal;
+
     event->accept();
 }
 
@@ -66,6 +81,20 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
 {
     QPoint pos = event->pos();
     const QRect area = plotArea();
+
+    if (m_legendVisible)
+    {
+        int clickedIndex = m_legend.checkClick(event->pos());
+        if (clickedIndex != -1)
+        {
+            bool newVisibility = !m_series[clickedIndex]->visible();
+            m_series[clickedIndex]->setVisible(newVisibility);
+
+            update(); // Forzar repintado
+            event->accept();
+            return;
+        }
+    }
 
     if (m_showXCursors)
     {
@@ -109,6 +138,7 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton && area.contains(pos))
     {
         // Left drag = pan
+        m_zoomAuto = false;
         m_panning = true;
         m_selecting = false;
         m_lastMousePos = pos;
@@ -118,6 +148,7 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
     {
         // Right drag = box-zoom selection
         m_selecting = true;
+        m_zoomAuto = false;
         m_panning = false;
         m_selStart = pos;
         m_selEnd = pos;
@@ -139,6 +170,24 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
 void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
 {
     QPoint pos = event->pos();
+
+    if (m_legendVisible)
+    {
+        if (m_legend.lastRenderedRect().contains(event->pos()))
+        {
+            setCursor(Qt::PointingHandCursor);
+            update(); // Forzar repintado
+            event->accept();
+            return;
+        }
+    }
+
+    if (pos.y() > plotArea().bottom())
+    {
+        setCursor(Qt::SizeHorCursor);
+        event->accept();
+        return;
+    }
 
     bool overCursor = false;
 
@@ -181,6 +230,11 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
         else if (m_activeCursor == CursorType::Y2)
             m_cursorY2 = dataPos.y();
 
+        if (m_cursorX1 < m_xMin)
+            m_cursorX1 = m_xMin;
+        if (m_cursorX2 > m_xMax)
+            m_cursorX2 = m_xMax - 0.0001;
+
         update(); // Forzar repintado inmediato
         event->accept();
         return;
@@ -206,7 +260,6 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
             m_yMax += dy;
         }
 
-        m_autoScroll = false;
         emitViewChanged();
         update();
     }
@@ -278,7 +331,6 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent *event)
                 m_yMax = newYmax;
             }
 
-            m_autoScroll = false;
             emitViewChanged();
         }
 
@@ -322,9 +374,7 @@ void RealtimePlot::keyPressEvent(QKeyEvent *event)
     case Qt::Key_B: // Both
         setZoomMode(ZoomMode::XY);
         break;
-    case Qt::Key_S: // Toggle auto-scroll
-        m_autoScroll = !m_autoScroll;
-        break;
+
     default:
         QOpenGLWidget::keyPressEvent(event);
         return;

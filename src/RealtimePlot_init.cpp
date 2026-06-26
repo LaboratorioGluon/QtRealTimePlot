@@ -41,6 +41,8 @@ RealtimePlot::RealtimePlot(QWidget *parent)
     m_cursorFont = QFont("Monospace", 12);
 
     connect(m_timer, &QTimer::timeout, this, QOverload<>::of(&RealtimePlot::update));
+
+    m_legend.setSeriesSource(&m_series);
 }
 
 RealtimePlot::~RealtimePlot()
@@ -65,8 +67,13 @@ std::shared_ptr<PlotSeries> RealtimePlot::addSeries(const QString &name,
                                                     size_t maxPoints)
 {
     auto s = std::make_shared<PlotSeries>(name, color);
-    m_series.push_back(s);
+    addSeries(s);
     return s;
+}
+
+void RealtimePlot::addSeries(std::shared_ptr<PlotSeries> serie)
+{
+    m_series.push_back(serie);
 }
 
 void RealtimePlot::removeSeries(const std::shared_ptr<PlotSeries> &series)

@@ -10,6 +10,7 @@
 #include <cmath>
 #include <atomic>
 #include <memory>
+#include <QPlainTextEdit>
 
 #include "RealtimePlot.h"
 
@@ -18,6 +19,7 @@
 // ---------------------------------------------------------------------------
 class DataThread : public QThread
 {
+    Q_OBJECT
 public:
     std::shared_ptr<PlotSeries> ch1, ch2, ch3;
     std::atomic<bool> running{true};
@@ -41,10 +43,15 @@ public:
                 ch3->pushPoint(t, v3);
                 t += dt;
             }
+
+            emit newData();
             // Sleep ~10 ms between bursts → ~100 bursts/s → 1000 pts/s total
             QThread::msleep(5);
         }
     }
+
+signals:
+    void newData();
 };
 
 // ---------------------------------------------------------------------------
@@ -66,18 +73,21 @@ public:
         vlay->setSpacing(4);
         setCentralWidget(central);
 
+        // --- Text Info ---
+        m_text = new QPlainTextEdit(this);
+        m_text->setReadOnly(true);
+        vlay->addWidget(m_text);
+
         // --- Plot ---
         m_plot = new RealtimePlot(this);
         m_plot->setTitle("Real-time ADC Channels (simulated @ 1 kHz)");
         m_plot->setXLabel("Time (s)");
         m_plot->setYLabel("Voltage (V)");
-        m_plot->setAutoScroll(true);
-        m_plot->setAutoScrollWindow(5.0); // show last 5 seconds
         m_plot->setRefreshRate(60);
 
-        auto ch1 = m_plot->addSeries("Ch1 - 10 Hz sine", QColor(0, 210, 255), 5000);
-        auto ch2 = m_plot->addSeries("Ch2 - 5 Hz decaying", QColor(255, 180, 0), 5000);
-        auto ch3 = m_plot->addSeries("Ch3 - 1 Hz + noise", QColor(80, 255, 120), 5000);
+        ch1 = m_plot->addSeries("Ch1 - 10 Hz sine", QColor(0, 210, 255), 5000);
+        ch2 = m_plot->addSeries("Ch2 - 5 Hz decaying", QColor(255, 180, 0), 5000);
+        ch3 = m_plot->addSeries("Ch3 - 1 Hz + noise", QColor(80, 255, 120), 5000);
         m_plot->start();
 
         vlay->addWidget(m_plot, 1);
@@ -94,9 +104,8 @@ public:
                 { m_plot->setZoomMode(static_cast<RealtimePlot::ZoomMode>(idx)); });
 
         auto *btnFit = new QPushButton("Auto-fit [F]", this);
-        auto *btnScroll = new QPushButton("Auto-scroll [S]", this);
-        btnScroll->setCheckable(true);
-        btnScroll->setChecked(true);
+        btnFit->setCheckable(true);
+        btnFit->setChecked(true);
 
         auto *btnGrid = new QPushButton("Grid", this);
 
@@ -109,7 +118,6 @@ public:
         hlay->addWidget(cmbZoom);
         hlay->addSpacing(12);
         hlay->addWidget(btnFit);
-        hlay->addWidget(btnScroll);
         hlay->addWidget(btnGrid);
         hlay->addStretch();
         hlay->addWidget(lblHelp);
@@ -117,16 +125,8 @@ public:
         connect(btnGrid, &QPushButton::clicked, this, [this](bool)
                 { this->m_plot->setGrid({!this->m_plot->getGrid().enabled, this->m_plot->getGrid().color}); });
 
-        connect(btnFit, &QPushButton::clicked, m_plot, &RealtimePlot::autoFit);
-        connect(btnScroll, &QPushButton::toggled, this, [this, btnScroll](bool on)
-                {
-            m_plot->setAutoScroll(on);
-            btnScroll->setText(on ? "Auto-scroll ON [S]" : "Auto-scroll OFF [S]"); });
-
-        connect(m_plot, &RealtimePlot::viewChanged,
-                this, [btnScroll](double xMin, double xMax, double, double)
-                {
-            Q_UNUSED(xMin); Q_UNUSED(xMax); });
+        connect(btnFit, &QPushButton::clicked, m_plot, [this](bool a)
+                { this->m_plot->setAutoZoom(a); });
 
         // --- Data thread ---
         m_thread = new DataThread;
@@ -134,6 +134,8 @@ public:
         m_thread->ch2 = ch2;
         m_thread->ch3 = ch3;
         m_thread->start();
+
+        connect(m_thread, &DataThread::newData, this, &MainWindow::newDataArrived);
     }
 
     ~MainWindow() override
@@ -143,9 +145,18 @@ public:
         delete m_thread;
     }
 
+    void newDataArrived()
+    {
+
+        m_text->setPlainText(QString("%1: %2").arg(ch1->name()).arg(ch1->getDataPoints()[ch1->getDataPoints().size() - 1].y));
+        m_text->appendPlainText(QString("%1: %2").arg(ch2->name()).arg(ch2->getDataPoints()[ch2->getDataPoints().size() - 1].y));
+    }
+
 private:
     RealtimePlot *m_plot = nullptr;
     DataThread *m_thread = nullptr;
+    QPlainTextEdit *m_text = nullptr;
+    std::shared_ptr<PlotSeries> ch1, ch2, ch3;
 };
 
 // ---------------------------------------------------------------------------
