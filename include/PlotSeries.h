@@ -27,10 +27,30 @@ public:
         double y;
     };
 
+    struct BlockStats
+    {
+        double xStart;
+        double xEnd;
+        double min;
+        double max;
+        double sum;   // Útil para calcular la media rápidamente (mean = sum / count)
+        double sumSq; // Útil para calcular el valor eficaz o desviación estándar (RMS)
+        size_t count;
+    };
+
     struct LodLevel
     {
         std::vector<Point> points;
+        std::vector<BlockStats> stats;
         size_t lastProcessedCrudeSize = 0; // How many items have we already processed.
+    };
+
+    struct IntervalStats
+    {
+        double min = std::numeric_limits<double>::max();
+        double max = -std::numeric_limits<double>::max();
+        double mean = 0.0;
+        double rms = 0.0;
     };
 
     explicit PlotSeries(QString name, QColor color = Qt::cyan);
@@ -75,6 +95,8 @@ public:
 
     int size() { return m_points.size(); }
     PlotSeries::Point getClosestPointToX(double xValue);
+
+    PlotSeries::IntervalStats calculateIntervalStats(double xMin, double xMax);
 
 private:
     void updateBounds(const Point &p);

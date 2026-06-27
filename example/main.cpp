@@ -148,8 +148,9 @@ public:
     void newDataArrived()
     {
 
-        m_text->setPlainText(QString("%1: %2").arg(ch1->name()).arg(ch1->getDataPoints()[ch1->getDataPoints().size() - 1].y));
-        m_text->appendPlainText(QString("%1: %2").arg(ch2->name()).arg(ch2->getDataPoints()[ch2->getDataPoints().size() - 1].y));
+        PlotSeries::IntervalStats stats = ch1->calculateIntervalStats(m_plot->getCursorX(RealtimePlot::CursorType::X1), m_plot->getCursorX(RealtimePlot::CursorType::X2));
+        m_text->setPlainText(QString("Mean: %1").arg(stats.mean));
+        m_text->appendPlainText(QString(" Std: %1").arg(stats.rms));
     }
 
 private:

@@ -14,6 +14,7 @@ void RealtimePlot::wheelEvent(QWheelEvent *event)
     QRect rectArea = plotArea();
 
     ZoomMode modoOriginal = m_zoomMode;
+    m_zoomAuto = false;
 
     if (pos.x() >= rectArea.left() && pos.x() <= rectArea.right() && pos.y() > rectArea.bottom())
     {

@@ -119,6 +119,11 @@ public:
 
     void setAutoZoom(bool a) { m_zoomAuto = a; }
 
+    double getCursorX(CursorType cursor)
+    {
+        return (cursor == CursorType::X1) ? m_cursorX1 : m_cursorX2;
+    }
+
 signals:
     void viewChanged(double xMin, double xMax, double yMin, double yMax);
 

@@ -280,9 +280,9 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
 
 void PlotSeries::updateLodLevels()
 {
-
-    auto &crude = m_lodLevels[0].points;
+    auto &crude = m_lodLevels[0].points; // Asumo que m_points y crude tienen los mismos datos
     auto &lod1 = m_lodLevels[1].points;
+
     size_t startIdx = m_lodLevels[1].lastProcessedCrudeSize;
     size_t endIdx = crude.size() - (crude.size() % LOD_FACTOR);
 
@@ -290,13 +290,34 @@ void PlotSeries::updateLodLevels()
     {
         size_t minIdx = i;
         size_t maxIdx = i;
-        for (size_t k = 1; k < LOD_FACTOR; ++k)
+
+        BlockStats block;
+        block.xStart = crude[i].x;
+        block.xEnd = crude[i + LOD_FACTOR - 1].x;
+        block.min = std::numeric_limits<double>::max();
+        block.max = -std::numeric_limits<double>::max();
+        block.sum = 0.0;
+        block.sumSq = 0.0;
+        block.count = LOD_FACTOR;
+
+        for (size_t k = 0; k < LOD_FACTOR; ++k)
         {
-            if (crude[i + k].y < crude[minIdx].y)
-                minIdx = i + k;
-            if (crude[i + k].y > crude[maxIdx].y)
-                maxIdx = i + k;
+            size_t currentIdx = i + k;
+            double y = crude[currentIdx].y;
+
+            if (y < block.min)
+                block.min = y;
+            if (y > block.max)
+                block.max = y;
+            block.sum += y;
+            block.sumSq += (y * y);
+
+            if (crude[currentIdx].y < crude[minIdx].y)
+                minIdx = currentIdx;
+            if (crude[currentIdx].y > crude[maxIdx].y)
+                maxIdx = currentIdx;
         }
+
         if (minIdx < maxIdx)
         {
             lod1.push_back(crude[minIdx]);
@@ -307,7 +328,10 @@ void PlotSeries::updateLodLevels()
             lod1.push_back(crude[maxIdx]);
             lod1.push_back(crude[minIdx]);
         }
+
+        m_lodLevels[1].stats.push_back(block);
     }
+
     m_lodLevels[1].lastProcessedCrudeSize = endIdx;
 
     auto &lod2 = m_lodLevels[2].points;
@@ -341,6 +365,7 @@ void PlotSeries::updateLodLevels()
 
 PlotSeries::Point PlotSeries::getClosestPointToX(double xValue)
 {
+
     if (m_lodLevels[0].points.empty())
         return Point{0.0, 0.0};
 
@@ -368,4 +393,98 @@ PlotSeries::Point PlotSeries::getClosestPointToX(double xValue)
     {
         return *it;
     }
+}
+
+PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double xMax)
+{
+
+    std::unique_lock<std::mutex> lck(m_mutex);
+
+    IntervalStats res;
+    if (xMin > xMax)
+    {
+        return res;
+    }
+    double totalSum = 0.0;
+    double totalSumSq = 0.0;
+    size_t totalCount = 0;
+
+    const auto &lod1 = m_lodLevels[1];
+    const auto &lod0Points = m_lodLevels[0].points;
+
+    auto itStart = std::lower_bound(lod1.stats.begin(), lod1.stats.end(), xMin,
+                                    [](const BlockStats &b, double val)
+                                    { return b.xStart < val; });
+
+    auto itEnd = std::upper_bound(lod1.stats.begin(), lod1.stats.end(), xMax,
+                                  [](double val, const BlockStats &b)
+                                  { return val < b.xEnd; });
+
+    double exactLodXMin = xMax;
+    double exactLodXMax = xMin;
+
+    if (itStart < itEnd && itStart != lod1.stats.end())
+    {
+        exactLodXMin = itStart->xStart;
+
+        for (auto it = itStart; it != itEnd; ++it)
+        {
+            if (it->min < res.min)
+                res.min = it->min;
+            if (it->max > res.max)
+                res.max = it->max;
+            totalSum += it->sum;
+            totalSumSq += it->sumSq;
+            totalCount += it->count;
+            exactLodXMax = it->xEnd;
+        }
+    }
+
+    auto ptStart = std::lower_bound(lod0Points.begin(), lod0Points.end(), xMin,
+                                    [](const Point &pt, double val)
+                                    { return pt.x < val; });
+    auto ptEnd = std::upper_bound(lod0Points.begin(), lod0Points.end(), xMax,
+                                  [](double val, const Point &pt)
+                                  { return val < pt.x; });
+
+    auto processPointRange = [&](auto start, auto end)
+    {
+        for (auto it = start; it != end; ++it)
+        {
+            if (it->y < res.min)
+                res.min = it->y;
+            if (it->y > res.max)
+                res.max = it->y;
+            totalSum += it->y;
+            totalSumSq += it->y * it->y;
+            totalCount++;
+        }
+    };
+
+    if (exactLodXMin < exactLodXMax)
+    {
+
+        auto ptMidStart = std::lower_bound(ptStart, ptEnd, exactLodXMin,
+                                           [](const Point &pt, double val)
+                                           { return pt.x < val; });
+        auto ptMidEnd = std::upper_bound(ptMidStart, ptEnd, exactLodXMax,
+                                         [](double val, const Point &pt)
+                                         { return val < pt.x; });
+
+        processPointRange(ptStart, ptMidStart);
+        processPointRange(ptMidEnd, ptEnd);
+    }
+    else
+    {
+
+        processPointRange(ptStart, ptEnd);
+    }
+
+    if (totalCount > 0)
+    {
+        res.mean = totalSum / totalCount;
+        res.rms = std::sqrt(totalSumSq / totalCount);
+    }
+
+    return res;
 }
