@@ -9,6 +9,12 @@
 #include <algorithm>
 #include <cmath>
 
+const std::vector<QColor> RealtimePlot::colorList =
+    {
+        Qt::red,
+        Qt::yellow,
+        Qt::green};
+
 // --------------------------------------------------------------------------
 // Vertex / fragment shaders (GLSL 1.20 – compatible with GL 2.1 and ES 2.0)
 // --------------------------------------------------------------------------

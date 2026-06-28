@@ -81,7 +81,7 @@ void RealtimePlot::resizeGL(int /*w*/, int /*h*/)
 void RealtimePlot::paintGL()
 {
 
-    auto start = std::chrono::high_resolution_clock::now();
+    auto startTimer = std::chrono::high_resolution_clock::now();
 
     if (m_zoomAuto)
     {
@@ -107,10 +107,8 @@ void RealtimePlot::paintGL()
     glClearColor(m_bgColor.redF(), m_bgColor.greenF(), m_bgColor.blueF(), 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // qDebug() << "Pre draw: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
     drawGrid(area, xTicks, yTicks);
     drawSeries(area);
-    // qDebug() << "Post draw: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
     drawAxes(area, xTicks, yTicks);
 
     // QPainter pass for text / overlays
@@ -210,7 +208,7 @@ void RealtimePlot::paintGL()
 
     // 3. Calcular la diferencia de tiempo
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::chrono::duration<double, std::milli> elapsed = end - startTimer;
 
     // 4. Imprimir en la consola de Qt de forma controlada (ej: cada 30 frames para no saturar)
     static int frameCount = 0;
@@ -261,7 +259,7 @@ void RealtimePlot::drawGrid(const QRect &area,
 void RealtimePlot::drawSeries(const QRect &area)
 {
 
-    auto start = std::chrono::high_resolution_clock::now();
+    auto startTimer = std::chrono::high_resolution_clock::now();
     if (!m_shaderReady || m_series.empty())
         return;
 
@@ -280,26 +278,26 @@ void RealtimePlot::drawSeries(const QRect &area)
                               (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
 
     int loc = m_shader->attributeLocation("a_position");
-    // qDebug() << "Pre series: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
+    // qDebug() << "Pre series: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - startTimer)).count();
     for (const auto &s : m_series)
     {
-        // start = std::chrono::high_resolution_clock::now();
+        // startTimer = std::chrono::high_resolution_clock::now();
         s->initGLBuffers();
-        // qDebug() << "\tInit buffers: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
+        // qDebug() << "\tInit buffers: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - startTimer)).count();
 
         if (!s->visible())
             continue;
 
-        // start = std::chrono::high_resolution_clock::now();
-        std::vector<PlotSeries::Point> &visiblePts = s->getVisiblePoints(m_xMin, m_xMax, area.width());
+        // startTimer = std::chrono::high_resolution_clock::now();
+        const std::vector<PlotSeries::Point> &visiblePts = s->getVisiblePoints(m_xMin, m_xMax, area.width());
         if (visiblePts.size() < 2)
             continue;
 
-        // qDebug() << "\tgetVisible: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
+        // qDebug() << "\tgetVisible: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - startTimer)).count();
 
-        // start = std::chrono::high_resolution_clock::now();
+        // startTimer = std::chrono::high_resolution_clock::now();
         s->uploadVisiblePoints(visiblePts);
-        // qDebug() << "\tpload points: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - start)).count();
+        // qDebug() << "\tpload points: " << std::chrono::duration<double, std::milli>((std::chrono::high_resolution_clock::now() - startTimer)).count();
         m_shader->setUniformValue("u_color", (float)s->color().redF(), (float)s->color().greenF(),
                                   (float)s->color().blueF(), (float)s->color().alphaF());
         glLineWidth(s->lineWidth() * dpr);

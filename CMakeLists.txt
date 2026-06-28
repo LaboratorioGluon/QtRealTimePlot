@@ -18,6 +18,20 @@ message(STATUS "Using Qt6")
 find_package(OpenGL REQUIRED)
 
 
+find_program(CPPCHECK_PATH cppcheck)
+
+if(CPPCHECK_PATH)
+    set(CMAKE_CXX_CPPCHECK "${CPPCHECK_PATH}" 
+        "--enable=all" 
+        "--suppress=missingInclude"
+        "--suppress=missingIncludeSystem"
+        "--inline-suppr"
+    )
+else()
+    message(WARNING "Cppcheck no encontrado. El análisis estático estará desactivado.")
+endif()
+
+
 # ============================================================
 # Library target
 # ============================================================
@@ -32,6 +46,10 @@ add_library(realtimeplot STATIC
     src/components/RtpCursor.cpp
     src/components/RtpRangeCursor.cpp
 )
+
+set_target_properties(realtimeplot PROPERTIES
+        CXX_CPPCHECK "${CPPCHECK_PATH};--suppress=unmatchedSuppression;--library=qt;--suppress=*:*moc_*.cpp;--enable=all;--suppress=missingInclude;--suppress=missingIncludeSystem;--suppress=unusedFunction;--inline-suppr"
+    )
 
 target_include_directories(realtimeplot
     PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include

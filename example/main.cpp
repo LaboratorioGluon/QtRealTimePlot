@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QComboBox>
 #include <QThread>
+#include <QObject>
 #include <QTimer>
 #include <cmath>
 #include <atomic>

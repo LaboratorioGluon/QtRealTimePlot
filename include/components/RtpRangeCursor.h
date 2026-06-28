@@ -56,7 +56,6 @@ private:
     QColor m_color;
     QColor m_textColor;
     QColor m_bgColor;
-    int m_padding;
     QRect m_lastRect;
 
     RtpCursor m_cStart;

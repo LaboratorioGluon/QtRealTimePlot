@@ -115,7 +115,15 @@ public:
     void setXLabel(const QString &l) { m_xLabel = l; }
     void setYLabel(const QString &l) { m_yLabel = l; }
 
-    void enableCursors(bool enableCursor1, bool enableCursor2) { m_showXCursors = enableCursor1; }
+    void addCursor(float xValue, QColor color = Qt::transparent, RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE)
+    {
+        m_cursors.push_back(RtpCursor(m_cursors.size(), color == Qt::transparent ? colorList[m_cursors.size() % (colorList.size())] : color, style));
+    };
+
+    void enableCursors(bool enableCursor1, bool enableCursor2)
+    {
+        m_showXCursors = enableCursor1;
+    }
     void enableRangeCursor(bool enable) { m_cursorRange.enable(enable); }
     RtpRangeCursor *getRangeCursor() { return &m_cursorRange; }
 
@@ -197,6 +205,7 @@ private:
     // --- Cursors ---
 
     RtpCursor m_cursorsX[2];
+    std::vector<RtpCursor> m_cursors;
     RtpRangeCursor m_cursorRange;
 
     bool m_showXCursors = true;
@@ -208,4 +217,6 @@ private:
     const int m_clickTolerancePixels = 7;
 
     RtpLegend m_legend;
+
+    static const std::vector<QColor> colorList;
 };

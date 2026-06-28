@@ -46,8 +46,7 @@ public:
 
     bool isVisible() { return m_isVisible; }
 
-    bool
-    isDragging() const
+    bool isDragging() const
     {
         return m_isDragging;
     }
@@ -67,7 +66,6 @@ private:
     QColor m_color;
     QColor m_textColor;
     QColor m_bgColor;
-    int m_padding;
     QRect m_lastRect;
 
     QRect m_labelRect;

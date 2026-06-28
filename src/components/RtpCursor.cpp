@@ -9,7 +9,6 @@ RtpCursor::RtpCursor(int index, QColor color, MarkerStyle style) : m_color(color
 void RtpCursor::setFont(const QFont &font) { m_font = font; }
 void RtpCursor::setTextColor(const QColor &color) { m_textColor = color; }
 void RtpCursor::setBackgroundColor(const QColor &bgColor) { m_bgColor = bgColor; }
-void RtpCursor::setMargin(const int marginPixels) { m_padding = marginPixels; }
 
 bool RtpCursor::contains(const QPoint &pos) const
 {
