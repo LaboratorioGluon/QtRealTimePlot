@@ -32,14 +32,14 @@ static const char *kFragSrc = R"GLSL(
 // ==========================================================================
 RealtimePlot::RealtimePlot(QWidget *parent)
     : QOpenGLWidget(parent), m_timer(new QTimer(this)),
-      m_cursorsX{RtpCursor(1, Qt::red, RtpCursor::MarkerStyle::MARKER_SIMPLE), RtpCursor(2, Qt::red)}
+      m_cursorsX{RtpCursor(1, Qt::green, RtpCursor::MarkerStyle::MARKER_SIMPLE), RtpCursor(2, QColor(20, 170, 255))},
+      m_cursorRange(1, QColor(255, 200, 50, 200), RtpCursor::MarkerStyle::MARKER_SIMPLE)
 {
     setFocusPolicy(Qt::StrongFocus);
     setMouseTracking(true);
 
     m_tickFont = QFont("Monospace", 12);
     m_labelFont = QFont("Sans", 9, QFont::Bold);
-    m_cursorFont = QFont("Monospace", 12);
 
     connect(m_timer, &QTimer::timeout, this, QOverload<>::of(&RealtimePlot::update));
 

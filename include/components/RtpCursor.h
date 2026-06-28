@@ -44,6 +44,8 @@ public:
     bool enabled() const { return m_isEnabled; }
     void enable(bool e) { m_isEnabled = e; }
 
+    bool isDragging() const { return m_isDragging; }
+
     bool contains(const QPoint &pos) const;
 
 private:

@@ -18,7 +18,6 @@ message(STATUS "Using Qt6")
 find_package(OpenGL REQUIRED)
 
 
-
 # ============================================================
 # Library target
 # ============================================================
@@ -31,6 +30,7 @@ add_library(realtimeplot STATIC
     src/RealtimePlot_input.cpp
     src/components/RtpLegend.cpp
     src/components/RtpCursor.cpp
+    src/components/RtpRangeCursor.cpp
 )
 
 target_include_directories(realtimeplot

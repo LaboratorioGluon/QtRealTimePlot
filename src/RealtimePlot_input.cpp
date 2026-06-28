@@ -107,12 +107,18 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
             if (c.mousePressEvent(event, px1))
             {
                 m_activeCursorRef = &c;
-                m_cursorDeltaX = c.getPos() - pixelToData(pos).x();
                 update();
                 event->accept();
                 return;
             }
         }
+    }
+
+    if (m_cursorRange.enabled())
+    {
+        int pxStart = dataToPixel(m_cursorRange.getPosStart(), m_yMin).x();
+        int pxEnd = dataToPixel(m_cursorRange.getPosEnd(), m_yMin).x();
+        m_activeCursorRef = m_cursorRange.mousePressEvent(event, pxStart, pxEnd);
     }
 
     if (m_activeCursor != CursorType::None)
@@ -156,26 +162,6 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
 void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
 {
     QPoint pos = event->pos();
-
-    if (m_legendVisible)
-    {
-        if (m_legend.lastRenderedRect().contains(event->pos()))
-        {
-            setCursor(Qt::PointingHandCursor);
-            update(); // Forzar repintado
-            event->accept();
-            return;
-        }
-    }
-
-    /*if (pos.y() > plotArea().bottom())
-    {
-        setCursor(Qt::SizeHorCursor);
-        event->accept();
-        return;
-    }*/
-
-    bool overCursor = false;
 
     if (m_activeCursorRef)
     {
@@ -221,10 +207,6 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
         m_selEnd = event->pos();
         update();
     }
-    else if (!overCursor)
-    {
-        setCursor(Qt::ArrowCursor);
-    }
     else
     {
         for (const auto &c : m_cursorsX)
@@ -239,7 +221,21 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
                 }
             }
         }
+
+        if (m_legendVisible)
+        {
+            if (m_legend.lastRenderedRect().contains(event->pos()))
+            {
+                setCursor(Qt::PointingHandCursor);
+                update(); // Forzar repintado
+                event->accept();
+                return;
+            }
+        }
     }
+
+    // If we arrive here, there is nothing special, reset cursor
+    unsetCursor();
 
     event->accept();
 }
@@ -255,17 +251,10 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent *event)
         setCursor(Qt::ArrowCursor);
     }
 
-    if (m_activeCursor != CursorType::None)
-    {
-        m_activeCursor = CursorType::None;
-        unsetCursor();
-        event->accept();
-        return;
-    }
-
     if (m_activeCursorRef)
     {
         m_activeCursorRef = nullptr;
+        unsetCursor();
         event->accept();
         return;
     }

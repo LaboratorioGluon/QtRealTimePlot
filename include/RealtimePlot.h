@@ -16,6 +16,7 @@
 #include "PlotAxis.h"
 #include "components/RtpLegend.h"
 #include "components/RtpCursor.h"
+#include "components/RtpRangeCursor.h"
 
 /**
  * @brief High-performance real-time plot widget using OpenGL.
@@ -120,11 +121,6 @@ public:
 
     void setAutoZoom(bool a) { m_zoomAuto = a; }
 
-    double getCursorX(CursorType cursor)
-    {
-        return (cursor == CursorType::X1) ? m_cursorX1 : m_cursorX2;
-    }
-
 signals:
     void viewChanged(double xMin, double xMax, double yMin, double yMax);
 
@@ -154,7 +150,6 @@ private:
     void drawAxes(const QRect &area,
                   const QVector<PlotAxis::Tick> &xTicks,
                   const QVector<PlotAxis::Tick> &yTicks);
-    void drawCursorH(QPainter &painter);
 
     // GL primitives (pixel-space coords)
     void drawLineStrip(const std::vector<float> &verts, QColor color, float width);
@@ -200,21 +195,7 @@ private:
     // --- Cursors ---
 
     RtpCursor m_cursorsX[2];
-
-    double m_cursorX1 = 0.0;
-    double m_cursorX2 = 0.0;
-    double m_cursorY1 = 0.0;
-    double m_cursorY2 = 0.0;
-
-    QRect m_rectLabelX1;
-    QRect m_rectLabelX2;
-    QRect m_rectLabelY1;
-    QRect m_rectLabelY2;
-
-    double m_cursorDeltaX = 0.0;
-    double m_cursorDeltaY = 0.0;
-
-    QFont m_cursorFont;
+    RtpRangeCursor m_cursorRange;
 
     bool m_showXCursors = true;
     bool m_showYCursors = false;

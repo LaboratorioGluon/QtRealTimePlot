@@ -97,61 +97,49 @@ void RtpCursor::drawSimpleMarker(QPainter &painter,
     painter.save();
     painter.setRenderHint(QPainter::Antialiasing, true);
 
-    // 1. Dimensiones fijas de nuestro Tag/Bocadillo
     const int rectWidth = 18;
     const int rectHeight = 24;
-    const int notchSize = rectWidth / 2; // Tamaño de la punta hacia abajo
+    const int notchSize = rectWidth / 2;
 
-    // 2. Construir el contorno del Tag relativo a su propia punta (0, 0)
-    // Definimos el camino en sentido horario empezando por la punta inferior
     QPainterPath path;
-    path.moveTo(0, 0); // La punta inferior que toca el dato/línea
+    path.moveTo(0, 0);
 
-    // Subimos hacia la esquina inferior izquierda del rectángulo
     path.lineTo(-notchSize, -notchSize);
     path.lineTo(-rectWidth / 2, -notchSize);
 
-    // Lado izquierdo y parte superior
     path.lineTo(-rectWidth / 2, -(notchSize + rectHeight));
     path.lineTo(rectWidth / 2, -(notchSize + rectHeight));
 
-    // Lado derecho y base derecha
     path.lineTo(rectWidth / 2, -notchSize);
     path.lineTo(notchSize, -notchSize);
 
-    path.closeSubpath(); // Cierra el camino volviendo a (0,0)
+    path.closeSubpath();
 
-    // 3. Posicionar el QPainter en la punta del marcador (Usa coordenadas locales)
     painter.translate(calculatedPixelX, plotArea.top() + rectHeight + notchSize);
 
-    // 4. Dibujar el contorno y fondo del Tag
-    painter.setPen(QPen(m_textColor, 2)); // Un borde ligeramente más claro
+    m_labelRect = QRect(calculatedPixelX - rectWidth / 2, plotArea.top(), rectWidth, rectHeight + notchSize);
+
+    painter.setPen(QPen(m_color, 2));
     painter.setBrush(m_bgColor);
     painter.drawPath(path);
 
-    // 5. Configurar la fuente para el texto ("M1", "M2", etc.)
     QFont font = painter.font();
     font.setPointSize(9);
     font.setBold(true);
     painter.setFont(font);
 
-    // 6. Calcular el centro de la caja del texto para rotar sobre su propio eje
-    // El rectángulo del texto está elevado respecto a la punta (0,0)
     int textCenterX = 0;
     int textCenterY = -(notchSize + (rectHeight / 2));
 
-    // Trasladamos el origen al centro del texto, rotamos, y volvemos
     painter.translate(textCenterX, textCenterY);
-    painter.rotate(-90); // Cambia aquí los grados de inclinación que quieras (ej: -15° o -45°)
+    painter.rotate(-90);
 
     m_font.setBold(true);
-    // 7. Dibujar el texto centrado en el nuevo origen rotado
-    painter.setPen(m_textColor);
 
-    // Definimos un bounding box simétrico alrededor del origen actual (0,0)
+    painter.setPen(m_color);
+
     QRect textRect(-rectWidth / 2, -rectHeight / 2, rectWidth, rectHeight);
 
-    // Usamos banderas de centrado estricto tanto horizontal como vertical
     painter.drawText(textRect, Qt::AlignCenter, QString("M%1").arg(m_cursorIndex));
     m_font.setBold(false);
 
@@ -177,7 +165,6 @@ void RtpCursor::draw(QPainter &painter,
 
         m_lineHitbox = QRect(calculatedPixelX - 4, plotArea.top(), 8, plotArea.height());
 
-        // Línea
         painter.setPen(QPen(m_color, m_isDragging ? 2 : 1, Qt::SolidLine));
         painter.drawLine(calculatedPixelX, plotArea.top(), calculatedPixelX, plotArea.bottom());
 
@@ -189,37 +176,7 @@ void RtpCursor::draw(QPainter &painter,
         {
             drawFullMarker(painter, plotArea, calculatedPixelX, alignLeft);
         }
-        /* QFontMetrics fm(m_font);
-        int lineHeight = fm.height();
-        int padding = 4;
 
-        int boxHeight = padding * 2 + lineHeight * (1 + m_seriesRef->size()) + (m_seriesRef->size() * 2);
-        int boxWidth = 120;
-
-            // Caja
-        int boxX = alignLeft ? (calculatedPixelX - boxWidth) : calculatedPixelX;
-        m_labelRect = QRect(boxX, plotArea.top() + 5, boxWidth, boxHeight);
-
-        painter.setBrush(QColor(10, 10, 10, m_isDragging ? 255 : 230));
-        painter.setPen(QPen(m_color, 1, Qt::SolidLine));
-        painter.drawRect(m_labelRect);
-
-        // Textos
-        painter.setPen(m_color);
-        int textX = alignLeft ? (calculatedPixelX - 4) : (calculatedPixelX + 4);
-        auto alignment = alignLeft ? (Qt::AlignRight | Qt::AlignTop) : (Qt::AlignLeft | Qt::AlignTop);
-        painter.drawText(QRect(textX, plotArea.top() + 5 + padding, alignLeft ? -boxWidth : boxWidth, lineHeight).normalized(), alignment, mainLabel);
-
-        int index = 1;
-        for (const auto &s : *m_seriesRef)
-        {
-            painter.setPen(Qt::white);
-            painter.drawText(
-                QRect(textX, plotArea.top() + 5 + padding + (lineHeight + 2) * index++, alignLeft ? -boxWidth : boxWidth, lineHeight).normalized(),
-                alignment,
-                QString("%1 pA").arg(s->getClosestPointToX(m_xPos).y, 0, 'f', 2));
-        }
-
-        painter.restore(); */
+        painter.restore();
     }
 }
