@@ -202,7 +202,7 @@ void RealtimePlot::paintGL()
         c.draw(painter, plotArea(), dataToPixel(c.getPos(), 0).x(), QString("Marker %1").arg(cIndex++));
     }
 
-    m_cursorRange.draw(painter, plotArea(), dataToPixel(0, 0).x(), dataToPixel(10, 0).x());
+    m_cursorRange.draw(painter, plotArea(), dataToPixel(m_cursorRange.getPosStart(), 0).x(), dataToPixel(m_cursorRange.getPosEnd(), 0).x());
 
     painter.end();
 

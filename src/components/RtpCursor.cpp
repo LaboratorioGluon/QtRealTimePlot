@@ -44,6 +44,7 @@ bool RtpCursor::mouseMoveEvent(QMouseEvent *event, const QRect &plotArea, int &o
     if (newPixelX > plotArea.right())
         newPixelX = plotArea.right();
 
+    qDebug() << "Movin cursor to " << newPixelX;
     outNewPixelX = newPixelX; // Devolvemos el píxel calculado al plot
     return true;
 }
