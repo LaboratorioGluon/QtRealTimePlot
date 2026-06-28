@@ -116,6 +116,8 @@ public:
     void setYLabel(const QString &l) { m_yLabel = l; }
 
     void enableCursors(bool enableCursor1, bool enableCursor2) { m_showXCursors = enableCursor1; }
+    void enableRangeCursor(bool enable) { m_cursorRange.enable(enable); }
+    RtpRangeCursor *getRangeCursor() { return &m_cursorRange; }
 
     void setLegendVisible(bool v) { m_legendVisible = v; }
 

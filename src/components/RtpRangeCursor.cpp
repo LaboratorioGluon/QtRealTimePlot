@@ -73,11 +73,13 @@ void RtpRangeCursor::draw(QPainter &painter,
 
     QColor bg = m_color.lighter(100);
     bg.setAlpha(20);
-    painter.setBrush(QBrush(bg));
-    painter.setPen(Qt::PenStyle::NoPen);
-    painter.drawRect(zone);
-    painter.restore();
-
+    if (m_cStart.isVisible() && m_cEnd.isVisible())
+    {
+        painter.setBrush(QBrush(bg));
+        painter.setPen(Qt::PenStyle::NoPen);
+        painter.drawRect(zone);
+        painter.restore();
+    }
     m_cStart.draw(painter, plotArea, calculatedPixelStart, "Start");
     m_cEnd.draw(painter, plotArea, calculatedPixelEnd, "End");
 }

@@ -51,6 +51,8 @@ public:
         double max = -std::numeric_limits<double>::max();
         double mean = 0.0;
         double rms = 0.0;
+        int numSamples = 0;
+        double timeDiff = 0.0;
     };
 
     explicit PlotSeries(QString name, QColor color = Qt::cyan);

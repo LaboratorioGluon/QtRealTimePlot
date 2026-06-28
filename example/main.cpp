@@ -148,9 +148,11 @@ public:
     void newDataArrived()
     {
 
-        // PlotSeries::IntervalStats stats = ch1->calculateIntervalStats(m_plot->getCursorX(RealtimePlot::CursorType::X1), m_plot->getCursorX(RealtimePlot::CursorType::X2));
-        // m_text->setPlainText(QString("Mean: %1").arg(stats.mean));
-        // m_text->appendPlainText(QString(" Std: %1").arg(stats.rms));
+        PlotSeries::IntervalStats stats = ch1->calculateIntervalStats(m_plot->getRangeCursor()->getPosStart(), m_plot->getRangeCursor()->getPosEnd());
+        m_text->setPlainText(QString("Samples: %1").arg(stats.numSamples));
+        m_text->appendPlainText(QString("Time: %1").arg(stats.timeDiff));
+        m_text->appendPlainText(QString("Mean: %1").arg(stats.mean));
+        m_text->appendPlainText(QString(" Std: %1").arg(stats.rms));
     }
 
 private:

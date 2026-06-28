@@ -44,7 +44,13 @@ public:
     bool enabled() const { return m_isEnabled; }
     void enable(bool e) { m_isEnabled = e; }
 
-    bool isDragging() const { return m_isDragging; }
+    bool isVisible() { return m_isVisible; }
+
+    bool
+    isDragging() const
+    {
+        return m_isDragging;
+    }
 
     bool contains(const QPoint &pos) const;
 
@@ -56,7 +62,7 @@ private:
     int m_dragOffset = 0;
 
     int m_cursorIndex;
-
+    bool m_isVisible = false;
     QFont m_font;
     QColor m_color;
     QColor m_textColor;

@@ -482,6 +482,8 @@ PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double
 
     if (totalCount > 0)
     {
+        res.numSamples = totalCount;
+        res.timeDiff = xMax - xMin;
         res.mean = totalSum / totalCount;
         res.rms = std::sqrt(totalSumSq / totalCount);
     }

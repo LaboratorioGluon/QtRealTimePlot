@@ -156,10 +156,12 @@ void RtpCursor::draw(QPainter &painter,
     {
         if (!m_isEnabled || calculatedPixelX < plotArea.left() || calculatedPixelX > plotArea.right())
         {
+            m_isVisible = false;
             m_labelRect = QRect();
             m_lineHitbox = QRect();
             return;
         }
+        m_isVisible = true;
 
         painter.save();
         painter.setFont(m_font);
