@@ -78,7 +78,7 @@ void RtpCursor::drawFullMarker(QPainter& painter, const QRect& plotArea,
 
     int boxHeight = padding * 2 + lineHeight * (1 + m_seriesRef->size()) +
                     (m_seriesRef->size() * 2);
-    int boxWidth = 120;
+    int boxWidth  = 120;
 
     int boxX    = alignLeft ? (calculatedPixelX - boxWidth) : calculatedPixelX;
     m_labelRect = QRect(boxX, plotArea.top() + 5, boxWidth, boxHeight);

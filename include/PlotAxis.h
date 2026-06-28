@@ -12,9 +12,9 @@
  */
 class PlotAxis
 {
-public:
+   public:
     struct Tick {
-        double value;
+        double  value;
         QString label;
     };
 
@@ -24,6 +24,6 @@ public:
     // Format a value with appropriate precision given the step size
     static QString formatValue(double value, double step);
 
-private:
+   private:
     static double niceNum(double range, bool round);
 };
