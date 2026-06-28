@@ -13,7 +13,7 @@ void PlotSeries::pushPoint(double x, double y)
     pushPoint({x, y});
 }
 
-void PlotSeries::pushPoint(const Point &p)
+void PlotSeries::pushPoint(const Point& p)
 {
     std::lock_guard<std::mutex> lg(m_mutex);
     m_lodLevels[0].points.push_back(p);
@@ -22,7 +22,8 @@ void PlotSeries::pushPoint(const Point &p)
     m_points.push_back(p);
     updateBounds(p);
 
-    if (m_lodLevels[0].points.size() - m_lodLevels[1].lastProcessedCrudeSize >= 1000)
+    if (m_lodLevels[0].points.size() - m_lodLevels[1].lastProcessedCrudeSize >=
+        1000)
     {
         updateLodLevels();
     }
@@ -32,16 +33,16 @@ void PlotSeries::clear()
 {
     std::lock_guard<std::mutex> lg(m_mutex);
     m_points.clear();
-    for (auto &level : m_lodLevels)
+    for (auto& level : m_lodLevels)
     {
         level.points.clear();
         level.lastProcessedCrudeSize = 0;
     }
     m_pointsInGPU = 0;
-    m_xMin = std::numeric_limits<double>::max();
-    m_xMax = -std::numeric_limits<double>::max();
-    m_yMin = std::numeric_limits<double>::max();
-    m_yMax = -std::numeric_limits<double>::max();
+    m_xMin        = std::numeric_limits<double>::max();
+    m_xMax        = -std::numeric_limits<double>::max();
+    m_yMin        = std::numeric_limits<double>::max();
+    m_yMax        = -std::numeric_limits<double>::max();
 }
 
 std::unique_lock<std::mutex> PlotSeries::lock() const
@@ -49,7 +50,7 @@ std::unique_lock<std::mutex> PlotSeries::lock() const
     return std::unique_lock<std::mutex>(m_mutex);
 }
 
-void PlotSeries::updateBounds(const Point &p)
+void PlotSeries::updateBounds(const Point& p)
 {
     if (p.x < m_xMin)
         m_xMin = p.x;
@@ -67,7 +68,7 @@ void PlotSeries::recomputeBounds()
     m_xMax = -std::numeric_limits<double>::max();
     m_yMin = std::numeric_limits<double>::max();
     m_yMax = -std::numeric_limits<double>::max();
-    for (const auto &p : m_points)
+    for (const auto& p : m_points)
         updateBounds(p);
 }
 
@@ -75,7 +76,7 @@ void PlotSeries::initGLBuffers()
 {
     if (m_glInitialized)
         return;
-    initializeOpenGLFunctions(); // Inicializa el d_ptr de esta serie
+    initializeOpenGLFunctions();  // Inicializa el d_ptr de esta serie
 
     m_vao.create();
     m_vbo.create();
@@ -89,13 +90,14 @@ void PlotSeries::initGLBuffers()
     m_glInitialized = true;
 }
 
-void PlotSeries::uploadVisiblePoints(const std::vector<Point> &visiblePts)
+void PlotSeries::uploadVisiblePoints(const std::vector<Point>& visiblePts)
 {
     if (!m_glInitialized || visiblePts.empty())
         return;
 
     m_vbo.bind();
-    m_vbo.allocate(visiblePts.data(), static_cast<int>(visiblePts.size() * sizeof(Point)));
+    m_vbo.allocate(visiblePts.data(),
+                   static_cast<int>(visiblePts.size() * sizeof(Point)));
     m_vbo.release();
 }
 
@@ -135,9 +137,9 @@ void PlotSeries::syncWithGPU()
     m_vbo.bind();
 
     int offsetBytes = static_cast<int>(m_pointsInGPU * sizeof(Point));
-    int sizeBytes = static_cast<int>(newPointsCount * sizeof(Point));
+    int sizeBytes   = static_cast<int>(newPointsCount * sizeof(Point));
 
-    const Point *dataPtr = &m_points[m_pointsInGPU];
+    const Point* dataPtr = &m_points[m_pointsInGPU];
 
     m_vbo.write(offsetBytes, dataPtr, sizeBytes);
 
@@ -146,7 +148,9 @@ void PlotSeries::syncWithGPU()
     m_pointsInGPU = m_points.size();
 }
 
-std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double xMax, int targetWidth)
+std::vector<PlotSeries::Point>& PlotSeries::getVisiblePoints(double xMin,
+                                                             double xMax,
+                                                             int    targetWidth)
 {
     std::lock_guard<std::mutex> lg(m_mutex);
     m_visibleBuffer.clear();
@@ -154,22 +158,23 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
     if (m_points.empty() || targetWidth <= 0)
         return m_visibleBuffer;
 
-    const_cast<PlotSeries *>(this)->updateLodLevels();
+    const_cast<PlotSeries*>(this)->updateLodLevels();
 
-    const auto &crudePoints = m_lodLevels[0].points;
-    auto itStartCrude = std::lower_bound(crudePoints.begin(), crudePoints.end(), xMin,
-                                         [](const Point &p, double val)
-                                         { return p.x < val; });
-    auto itEndCrude = std::upper_bound(crudePoints.begin(), crudePoints.end(), xMax,
-                                       [](double val, const Point &p)
-                                       { return val < p.x; });
+    const auto& crudePoints = m_lodLevels[0].points;
+    auto        itStartCrude =
+        std::lower_bound(crudePoints.begin(), crudePoints.end(), xMin,
+                         [](const Point& p, double val) { return p.x < val; });
+    auto itEndCrude =
+        std::upper_bound(crudePoints.begin(), crudePoints.end(), xMax,
+                         [](double val, const Point& p) { return val < p.x; });
 
     size_t totalVisibleCrude = std::distance(itStartCrude, itEndCrude);
     if (totalVisibleCrude == 0)
         return m_visibleBuffer;
 
     size_t selectedLevel = 0;
-    double pointsPerPixel = static_cast<double>(totalVisibleCrude) / targetWidth;
+    double pointsPerPixel =
+        static_cast<double>(totalVisibleCrude) / targetWidth;
 
     if (pointsPerPixel > 10000.0)
     {
@@ -186,14 +191,14 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
 
     // qDebug() << "Level: " << selectedLevel << " Visible: " << totalVisibleCrude << "Density: " << pointsPerPixel;
 
-    const auto &sourcePoints = m_lodLevels[selectedLevel].points;
+    const auto& sourcePoints = m_lodLevels[selectedLevel].points;
 
-    auto itStart = std::lower_bound(sourcePoints.begin(), sourcePoints.end(), xMin,
-                                    [](const Point &p, double val)
-                                    { return p.x < val; });
-    auto itEnd = std::upper_bound(sourcePoints.begin(), sourcePoints.end(), xMax,
-                                  [](double val, const Point &p)
-                                  { return val < p.x; });
+    auto itStart =
+        std::lower_bound(sourcePoints.begin(), sourcePoints.end(), xMin,
+                         [](const Point& p, double val) { return p.x < val; });
+    auto itEnd =
+        std::upper_bound(sourcePoints.begin(), sourcePoints.end(), xMax,
+                         [](double val, const Point& p) { return val < p.x; });
 
     size_t totalVisible = std::distance(itStart, itEnd);
     if (totalVisible == 0)
@@ -217,11 +222,10 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
 
     double inverseXRangeWithWidth = static_cast<double>(targetWidth) / xRange;
 
-    struct BucketData
-    {
+    struct BucketData {
         Point minPt;
         Point maxPt;
-        bool assigned = false;
+        bool  assigned = false;
     };
 
     static std::vector<BucketData> buckets;
@@ -235,18 +239,19 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
     for (auto it = itStart; it != itEnd; ++it)
     {
 
-        int pixelIdx = static_cast<int>((it->x - xMin) * inverseXRangeWithWidth);
+        int pixelIdx =
+            static_cast<int>((it->x - xMin) * inverseXRangeWithWidth);
 
         if (pixelIdx < 0)
             pixelIdx = 0;
         if (pixelIdx >= targetWidth)
             pixelIdx = targetWidth - 1;
 
-        BucketData &b = buckets[pixelIdx];
+        BucketData& b = buckets[pixelIdx];
         if (!b.assigned)
         {
-            b.minPt = *it;
-            b.maxPt = *it;
+            b.minPt    = *it;
+            b.maxPt    = *it;
             b.assigned = true;
         }
         else
@@ -280,11 +285,13 @@ std::vector<PlotSeries::Point> &PlotSeries::getVisiblePoints(double xMin, double
 
 void PlotSeries::updateLodLevels()
 {
-    auto &crude = m_lodLevels[0].points; // Asumo que m_points y crude tienen los mismos datos
-    auto &lod1 = m_lodLevels[1].points;
+    auto& crude =
+        m_lodLevels[0]
+            .points;  // Asumo que m_points y crude tienen los mismos datos
+    auto& lod1 = m_lodLevels[1].points;
 
     size_t startIdx = m_lodLevels[1].lastProcessedCrudeSize;
-    size_t endIdx = crude.size() - (crude.size() % LOD_FACTOR);
+    size_t endIdx   = crude.size() - (crude.size() % LOD_FACTOR);
 
     for (size_t i = startIdx; i < endIdx; i += LOD_FACTOR)
     {
@@ -293,17 +300,17 @@ void PlotSeries::updateLodLevels()
 
         BlockStats block;
         block.xStart = crude[i].x;
-        block.xEnd = crude[i + LOD_FACTOR - 1].x;
-        block.min = std::numeric_limits<double>::max();
-        block.max = -std::numeric_limits<double>::max();
-        block.sum = 0.0;
-        block.sumSq = 0.0;
-        block.count = LOD_FACTOR;
+        block.xEnd   = crude[i + LOD_FACTOR - 1].x;
+        block.min    = std::numeric_limits<double>::max();
+        block.max    = -std::numeric_limits<double>::max();
+        block.sum    = 0.0;
+        block.sumSq  = 0.0;
+        block.count  = LOD_FACTOR;
 
         for (size_t k = 0; k < LOD_FACTOR; ++k)
         {
             size_t currentIdx = i + k;
-            double y = crude[currentIdx].y;
+            double y          = crude[currentIdx].y;
 
             if (y < block.min)
                 block.min = y;
@@ -334,9 +341,9 @@ void PlotSeries::updateLodLevels()
 
     m_lodLevels[1].lastProcessedCrudeSize = endIdx;
 
-    auto &lod2 = m_lodLevels[2].points;
+    auto&  lod2      = m_lodLevels[2].points;
     size_t startIdx2 = m_lodLevels[2].lastProcessedCrudeSize;
-    size_t endIdx2 = lod1.size() - (lod1.size() % LOD_FACTOR);
+    size_t endIdx2   = lod1.size() - (lod1.size() % LOD_FACTOR);
 
     for (size_t i = startIdx2; i < endIdx2; i += LOD_FACTOR)
     {
@@ -369,11 +376,9 @@ PlotSeries::Point PlotSeries::getClosestPointToX(double xValue)
     if (m_lodLevels[0].points.empty())
         return Point{0.0, 0.0};
 
-    auto it = std::lower_bound(m_lodLevels[0].points.begin(), m_lodLevels[0].points.end(), xValue,
-                               [](const Point &pt, double val)
-                               {
-                                   return pt.x < val;
-                               });
+    auto it = std::lower_bound(
+        m_lodLevels[0].points.begin(), m_lodLevels[0].points.end(), xValue,
+        [](const Point& pt, double val) { return pt.x < val; });
 
     if (it == m_lodLevels[0].points.begin())
         return m_lodLevels[0].points.front();
@@ -383,7 +388,7 @@ PlotSeries::Point PlotSeries::getClosestPointToX(double xValue)
     auto prevIt = std::prev(it);
 
     double distCurrent = std::abs(it->x - xValue);
-    double distPrev = std::abs(prevIt->x - xValue);
+    double distPrev    = std::abs(prevIt->x - xValue);
 
     if (distPrev < distCurrent)
     {
@@ -395,7 +400,8 @@ PlotSeries::Point PlotSeries::getClosestPointToX(double xValue)
     }
 }
 
-PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double xMax)
+PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin,
+                                                             double xMax)
 {
 
     std::unique_lock<std::mutex> lck(m_mutex);
@@ -405,20 +411,20 @@ PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double
     {
         return res;
     }
-    double totalSum = 0.0;
+    double totalSum   = 0.0;
     double totalSumSq = 0.0;
     size_t totalCount = 0;
 
-    const auto &lod1 = m_lodLevels[1];
-    const auto &lod0Points = m_lodLevels[0].points;
+    const auto& lod1       = m_lodLevels[1];
+    const auto& lod0Points = m_lodLevels[0].points;
 
-    auto itStart = std::lower_bound(lod1.stats.begin(), lod1.stats.end(), xMin,
-                                    [](const BlockStats &b, double val)
-                                    { return b.xStart < val; });
+    auto itStart = std::lower_bound(
+        lod1.stats.begin(), lod1.stats.end(), xMin,
+        [](const BlockStats& b, double val) { return b.xStart < val; });
 
-    auto itEnd = std::upper_bound(lod1.stats.begin(), lod1.stats.end(), xMax,
-                                  [](double val, const BlockStats &b)
-                                  { return val < b.xEnd; });
+    auto itEnd = std::upper_bound(
+        lod1.stats.begin(), lod1.stats.end(), xMax,
+        [](double val, const BlockStats& b) { return val < b.xEnd; });
 
     double exactLodXMin = xMax;
     double exactLodXMax = xMin;
@@ -440,15 +446,14 @@ PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double
         }
     }
 
-    auto ptStart = std::lower_bound(lod0Points.begin(), lod0Points.end(), xMin,
-                                    [](const Point &pt, double val)
-                                    { return pt.x < val; });
-    auto ptEnd = std::upper_bound(lod0Points.begin(), lod0Points.end(), xMax,
-                                  [](double val, const Point &pt)
-                                  { return val < pt.x; });
+    auto ptStart = std::lower_bound(
+        lod0Points.begin(), lod0Points.end(), xMin,
+        [](const Point& pt, double val) { return pt.x < val; });
+    auto ptEnd = std::upper_bound(
+        lod0Points.begin(), lod0Points.end(), xMax,
+        [](double val, const Point& pt) { return val < pt.x; });
 
-    auto processPointRange = [&](auto start, auto end)
-    {
+    auto processPointRange = [&](auto start, auto end) {
         for (auto it = start; it != end; ++it)
         {
             if (it->y < res.min)
@@ -464,12 +469,12 @@ PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double
     if (exactLodXMin < exactLodXMax)
     {
 
-        auto ptMidStart = std::lower_bound(ptStart, ptEnd, exactLodXMin,
-                                           [](const Point &pt, double val)
-                                           { return pt.x < val; });
-        auto ptMidEnd = std::upper_bound(ptMidStart, ptEnd, exactLodXMax,
-                                         [](double val, const Point &pt)
-                                         { return val < pt.x; });
+        auto ptMidStart = std::lower_bound(
+            ptStart, ptEnd, exactLodXMin,
+            [](const Point& pt, double val) { return pt.x < val; });
+        auto ptMidEnd = std::upper_bound(
+            ptMidStart, ptEnd, exactLodXMax,
+            [](double val, const Point& pt) { return val < pt.x; });
 
         processPointRange(ptStart, ptMidStart);
         processPointRange(ptMidEnd, ptEnd);
@@ -483,9 +488,9 @@ PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double
     if (totalCount > 0)
     {
         res.numSamples = totalCount;
-        res.timeDiff = xMax - xMin;
-        res.mean = totalSum / totalCount;
-        res.rms = std::sqrt(totalSumSq / totalCount);
+        res.timeDiff   = xMax - xMin;
+        res.mean       = totalSum / totalCount;
+        res.rms        = std::sqrt(totalSumSq / totalCount);
     }
 
     return res;

@@ -1,21 +1,21 @@
 #pragma once
 
-#include <QOpenGLWidget>
-#include <QOpenGLFunctions>
-#include <QOpenGLShaderProgram>
-#include <QTimer>
-#include <QPoint>
-#include <QRectF>
 #include <QColor>
 #include <QFont>
+#include <QOpenGLFunctions>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLWidget>
+#include <QPoint>
+#include <QRectF>
+#include <QTimer>
 #include <QVector>
 #include <memory>
 #include <vector>
 
-#include "PlotSeries.h"
 #include "PlotAxis.h"
-#include "components/RtpLegend.h"
+#include "PlotSeries.h"
 #include "components/RtpCursor.h"
+#include "components/RtpLegend.h"
 #include "components/RtpRangeCursor.h"
 
 /**
@@ -49,50 +49,36 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
 {
     Q_OBJECT
 
-public:
+   public:
     // ------------------------------------------------------------------ types
-    enum class ZoomMode
-    {
-        XY,
-        XOnly,
-        YOnly
+    enum class ZoomMode { XY, XOnly, YOnly };
+
+    struct GridStyle {
+        bool   enabled = true;
+        QColor color   = QColor(55, 55, 65);
     };
 
-    struct GridStyle
-    {
-        bool enabled = true;
-        QColor color = QColor(55, 55, 65);
-    };
-
-    struct MarginPx
-    {
+    struct MarginPx {
         int left = 72, right = 18, top = 28, bottom = 52;
     };
 
-    enum class CursorType
-    {
-        None,
-        X1,
-        X2,
-        Y1,
-        Y2
-    };
+    enum class CursorType { None, X1, X2, Y1, Y2 };
 
     // ------------------------------------------------------------------ ctor
-    explicit RealtimePlot(QWidget *parent = nullptr);
+    explicit RealtimePlot(QWidget* parent = nullptr);
     ~RealtimePlot() override;
 
     // ------------------------------------------------------------------ series
-    std::shared_ptr<PlotSeries> addSeries(const QString &name,
-                                          QColor color = Qt::cyan,
-                                          size_t maxPoints = 10000);
-    void addSeries(std::shared_ptr<PlotSeries> serie);
-    void removeSeries(const std::shared_ptr<PlotSeries> &series);
+    std::shared_ptr<PlotSeries> addSeries(const QString& name,
+                                          QColor         color     = Qt::cyan,
+                                          size_t         maxPoints = 10000);
+    void                        addSeries(std::shared_ptr<PlotSeries> serie);
+    void removeSeries(const std::shared_ptr<PlotSeries>& series);
     void clearSeries();
 
     // ------------------------------------------------------------------ view
-    void autoFit();
-    void setViewRange(double xMin, double xMax, double yMin, double yMax);
+    void   autoFit();
+    void   setViewRange(double xMin, double xMax, double yMin, double yMax);
     QRectF viewRange() const;
 
     // ------------------------------------------------------------------ config
@@ -100,24 +86,31 @@ public:
     void start();
     void stop();
 
-    void setZoomMode(ZoomMode mode) { m_zoomMode = mode; }
+    void     setZoomMode(ZoomMode mode) { m_zoomMode = mode; }
     ZoomMode zoomMode() const { return m_zoomMode; }
 
-    void setGrid(const GridStyle &g) { m_grid = g; }
+    void      setGrid(const GridStyle& g) { m_grid = g; }
     GridStyle getGrid() { return m_grid; }
-    void setMargins(const MarginPx &m) { m_margin = m; }
+    void      setMargins(const MarginPx& m) { m_margin = m; }
 
     void setBackgroundColor(QColor c) { m_bgColor = c; }
     void setAxisColor(QColor c) { m_axisColor = c; }
     void setTextColor(QColor c) { m_textColor = c; }
 
-    void setTitle(const QString &t) { m_title = t; }
-    void setXLabel(const QString &l) { m_xLabel = l; }
-    void setYLabel(const QString &l) { m_yLabel = l; }
+    void setTitle(const QString& t) { m_title = t; }
+    void setXLabel(const QString& l) { m_xLabel = l; }
+    void setYLabel(const QString& l) { m_yLabel = l; }
 
-    void addCursor(float xValue, QColor color = Qt::transparent, RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE)
+    void addCursor(
+        float xValue, QColor color = Qt::transparent,
+        RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE)
     {
-        m_cursors.push_back(RtpCursor(m_cursors.size(), color == Qt::transparent ? colorList[m_cursors.size() % (colorList.size())] : color, style));
+        m_cursors.push_back(
+            RtpCursor(m_cursors.size(),
+                      color == Qt::transparent
+                          ? colorList[m_cursors.size() % (colorList.size())]
+                          : color,
+                      style));
     };
 
     void enableCursors(bool enableCursor1, bool enableCursor2)
@@ -125,45 +118,44 @@ public:
         m_showXCursors = enableCursor1;
     }
     void enableRangeCursor(bool enable) { m_cursorRange.enable(enable); }
-    RtpRangeCursor *getRangeCursor() { return &m_cursorRange; }
+    RtpRangeCursor* getRangeCursor() { return &m_cursorRange; }
 
     void setLegendVisible(bool v) { m_legendVisible = v; }
 
     void setAutoZoom(bool a) { m_zoomAuto = a; }
 
-signals:
+   signals:
     void viewChanged(double xMin, double xMax, double yMin, double yMax);
 
-protected:
+   protected:
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
 
-    void wheelEvent(QWheelEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
-    void mouseDoubleClickEvent(QMouseEvent *event) override;
-    void keyPressEvent(QKeyEvent *event) override;
+    void wheelEvent(QWheelEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
 
-private:
+   private:
     // Coordinate helpers
     QPointF pixelToData(QPoint px) const;
-    QPoint dataToPixel(double x, double y) const;
-    QRect plotArea() const;
+    QPoint  dataToPixel(double x, double y) const;
+    QRect   plotArea() const;
 
     // Draw passes
-    void drawGrid(const QRect &area,
-                  const QVector<PlotAxis::Tick> &xTicks,
-                  const QVector<PlotAxis::Tick> &yTicks);
-    void drawSeries(const QRect &area);
-    void drawAxes(const QRect &area,
-                  const QVector<PlotAxis::Tick> &xTicks,
-                  const QVector<PlotAxis::Tick> &yTicks);
+    void drawGrid(const QRect& area, const QVector<PlotAxis::Tick>& xTicks,
+                  const QVector<PlotAxis::Tick>& yTicks);
+    void drawSeries(const QRect& area);
+    void drawAxes(const QRect& area, const QVector<PlotAxis::Tick>& xTicks,
+                  const QVector<PlotAxis::Tick>& yTicks);
 
     // GL primitives (pixel-space coords)
-    void drawLineStrip(const std::vector<float> &verts, QColor color, float width);
-    void drawLines(const std::vector<float> &verts, QColor color, float width);
+    void drawLineStrip(const std::vector<float>& verts, QColor color,
+                       float width);
+    void drawLines(const std::vector<float>& verts, QColor color, float width);
 
     void applyZoom(double factor, QPoint anchor);
     void emitViewChanged();
@@ -174,47 +166,47 @@ private:
     // --- View state ---
     double m_xMin = 0.0, m_xMax = 1.0;
     double m_yMin = 0.0, m_yMax = 1.0;
-    bool m_viewInitialized = false;
+    bool   m_viewInitialized = false;
 
     // --- Style ---
-    QColor m_bgColor{18, 18, 22};
-    QColor m_axisColor{120, 120, 130};
-    QColor m_textColor{200, 200, 210};
+    QColor    m_bgColor{18, 18, 22};
+    QColor    m_axisColor{120, 120, 130};
+    QColor    m_textColor{200, 200, 210};
     GridStyle m_grid;
-    MarginPx m_margin;
-    QFont m_tickFont;
-    QFont m_labelFont;
-    QString m_title, m_xLabel, m_yLabel;
-    bool m_legendVisible = true;
+    MarginPx  m_margin;
+    QFont     m_tickFont;
+    QFont     m_labelFont;
+    QString   m_title, m_xLabel, m_yLabel;
+    bool      m_legendVisible = true;
 
     // --- Behavior ---
     ZoomMode m_zoomMode = ZoomMode::XY;
-    bool m_zoomAuto = true;
+    bool     m_zoomAuto = true;
 
     // --- Interaction ---
-    bool m_panning = false;
-    bool m_selecting = false;
+    bool   m_panning   = false;
+    bool   m_selecting = false;
     QPoint m_lastMousePos;
     QPoint m_selStart, m_selEnd;
 
     // --- GL ---
-    QTimer *m_timer = nullptr;
-    QOpenGLShaderProgram *m_shader = nullptr;
-    bool m_shaderReady = false;
+    QTimer*               m_timer       = nullptr;
+    QOpenGLShaderProgram* m_shader      = nullptr;
+    bool                  m_shaderReady = false;
 
     // --- Cursors ---
 
-    RtpCursor m_cursorsX[2];
+    RtpCursor              m_cursorsX[2];
     std::vector<RtpCursor> m_cursors;
-    RtpRangeCursor m_cursorRange;
+    RtpRangeCursor         m_cursorRange;
 
     bool m_showXCursors = true;
     bool m_showYCursors = false;
 
     // Gestión del arrastre
-    CursorType m_activeCursor = CursorType::None;
-    RtpCursor *m_activeCursorRef = nullptr;
-    const int m_clickTolerancePixels = 7;
+    CursorType m_activeCursor         = CursorType::None;
+    RtpCursor* m_activeCursorRef      = nullptr;
+    const int  m_clickTolerancePixels = 7;
 
     RtpLegend m_legend;
 

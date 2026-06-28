@@ -19,6 +19,7 @@ find_package(OpenGL REQUIRED)
 
 
 find_program(CPPCHECK_PATH cppcheck)
+find_program(CLANG_FORMAT_PATH clang-format)
 
 if(CPPCHECK_PATH)
     set(CMAKE_CXX_CPPCHECK "${CPPCHECK_PATH}" 
@@ -48,8 +49,21 @@ add_library(realtimeplot STATIC
 )
 
 set_target_properties(realtimeplot PROPERTIES
-        CXX_CPPCHECK "${CPPCHECK_PATH};--suppress=unmatchedSuppression;--library=qt;--suppress=*:*moc_*.cpp;--enable=all;--suppress=missingInclude;--suppress=missingIncludeSystem;--suppress=unusedFunction;--inline-suppr"
+    CXX_CPPCHECK "${CPPCHECK_PATH};--suppress=unmatchedSuppression;--library=qt;--suppress=*:*moc_*.cpp;--enable=all;--suppress=missingInclude;--suppress=missingIncludeSystem;--suppress=unusedFunction;--inline-suppr"
+)
+
+if(CLANG_FORMAT_PATH)
+    # Recuperamos las propiedades de los archivos fuentes del target
+    get_target_property(LYB_SOURCES realtimeplot SOURCES)
+    
+    # Añadimos un comando que se ejecuta antes de compilar el target
+    add_custom_command(
+        TARGET realtimeplot PRE_BUILD
+        COMMAND ${CLANG_FORMAT_PATH} -i -style=file ${LYB_SOURCES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Formateando archivos de la librería realtimeplot antes de compilar..."
     )
+endif()
 
 target_include_directories(realtimeplot
     PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include

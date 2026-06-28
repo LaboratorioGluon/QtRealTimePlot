@@ -1,27 +1,29 @@
-#include "RealtimePlot.h"
-#include <QWheelEvent>
-#include <QMouseEvent>
-#include <QKeyEvent>
 #include <QApplication>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QWheelEvent>
 #include <cmath>
+#include "RealtimePlot.h"
 
 // ==========================================================================
 //  Wheel zoom
 // ==========================================================================
-void RealtimePlot::wheelEvent(QWheelEvent *event)
+void RealtimePlot::wheelEvent(QWheelEvent* event)
 {
-    QPoint pos = event->position().toPoint();
-    QRect rectArea = plotArea();
+    QPoint pos      = event->position().toPoint();
+    QRect  rectArea = plotArea();
 
     ZoomMode modoOriginal = m_zoomMode;
-    m_zoomAuto = false;
+    m_zoomAuto            = false;
 
-    if (pos.x() >= rectArea.left() && pos.x() <= rectArea.right() && pos.y() > rectArea.bottom())
+    if (pos.x() >= rectArea.left() && pos.x() <= rectArea.right() &&
+        pos.y() > rectArea.bottom())
     {
 
         m_zoomMode = ZoomMode::XOnly;
     }
-    else if (pos.x() < rectArea.left() && pos.y() >= rectArea.top() && pos.y() <= rectArea.bottom())
+    else if (pos.x() < rectArea.left() && pos.y() >= rectArea.top() &&
+             pos.y() <= rectArea.bottom())
     {
 
         m_zoomMode = ZoomMode::YOnly;
@@ -39,7 +41,7 @@ void RealtimePlot::wheelEvent(QWheelEvent *event)
     }
 
     double angleDelta = event->angleDelta().y();
-    double factor = (angleDelta > 0) ? 0.85 : 1.15;
+    double factor     = (angleDelta > 0) ? 0.85 : 1.15;
 
     applyZoom(factor, pos);
 
@@ -55,7 +57,7 @@ void RealtimePlot::applyZoom(double factor, QPoint anchor)
 
     if (m_zoomMode == ZoomMode::XY || m_zoomMode == ZoomMode::XOnly)
     {
-        double distLeft = dataAnchor.x() - m_xMin;
+        double distLeft  = dataAnchor.x() - m_xMin;
         double distRight = m_xMax - dataAnchor.x();
 
         m_xMin = dataAnchor.x() - distLeft / factor;
@@ -65,7 +67,7 @@ void RealtimePlot::applyZoom(double factor, QPoint anchor)
     if (m_zoomMode == ZoomMode::XY || m_zoomMode == ZoomMode::YOnly)
     {
         double distBottom = dataAnchor.y() - m_yMin;
-        double distTop = m_yMax - dataAnchor.y();
+        double distTop    = m_yMax - dataAnchor.y();
 
         m_yMin = dataAnchor.y() - distBottom / factor;
         m_yMax = dataAnchor.y() + distTop / factor;
@@ -78,9 +80,9 @@ void RealtimePlot::applyZoom(double factor, QPoint anchor)
 // ==========================================================================
 //  Mouse press
 // ==========================================================================
-void RealtimePlot::mousePressEvent(QMouseEvent *event)
+void RealtimePlot::mousePressEvent(QMouseEvent* event)
 {
-    QPoint pos = event->pos();
+    QPoint      pos  = event->pos();
     const QRect area = plotArea();
 
     if (m_legendVisible)
@@ -91,13 +93,13 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
             bool newVisibility = !m_series[clickedIndex]->visible();
             m_series[clickedIndex]->setVisible(newVisibility);
 
-            update(); // Forzar repintado
+            update();  // Forzar repintado
             event->accept();
             return;
         }
     }
 
-    for (auto &c : m_cursorsX)
+    for (auto& c : m_cursorsX)
     {
         if (c.enabled())
         {
@@ -117,8 +119,9 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
     if (m_cursorRange.enabled())
     {
         int pxStart = dataToPixel(m_cursorRange.getPosStart(), m_yMin).x();
-        int pxEnd = dataToPixel(m_cursorRange.getPosEnd(), m_yMin).x();
-        m_activeCursorRef = m_cursorRange.mousePressEvent(event, pxStart, pxEnd);
+        int pxEnd   = dataToPixel(m_cursorRange.getPosEnd(), m_yMin).x();
+        m_activeCursorRef =
+            m_cursorRange.mousePressEvent(event, pxStart, pxEnd);
     }
 
     if (m_activeCursor != CursorType::None)
@@ -130,9 +133,9 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton && area.contains(pos))
     {
         // Left drag = pan
-        m_zoomAuto = false;
-        m_panning = true;
-        m_selecting = false;
+        m_zoomAuto     = false;
+        m_panning      = true;
+        m_selecting    = false;
         m_lastMousePos = pos;
         setCursor(Qt::ClosedHandCursor);
     }
@@ -140,15 +143,15 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
     {
         // Right drag = box-zoom selection
         m_selecting = true;
-        m_zoomAuto = false;
-        m_panning = false;
-        m_selStart = pos;
-        m_selEnd = pos;
+        m_zoomAuto  = false;
+        m_panning   = false;
+        m_selStart  = pos;
+        m_selEnd    = pos;
         setCursor(Qt::CrossCursor);
     }
     else if (event->button() == Qt::MiddleButton)
     {
-        m_panning = true;
+        m_panning      = true;
         m_lastMousePos = pos;
         setCursor(Qt::ClosedHandCursor);
     }
@@ -159,7 +162,7 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
 // ==========================================================================
 //  Mouse move
 // ==========================================================================
-void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
+void RealtimePlot::mouseMoveEvent(QMouseEvent* event)
 {
     QPoint pos = event->pos();
 
@@ -181,12 +184,12 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
     }
     else if (m_panning)
     {
-        QPoint delta = event->pos() - m_lastMousePos;
+        QPoint delta   = event->pos() - m_lastMousePos;
         m_lastMousePos = event->pos();
 
         const QRect area = plotArea();
-        double dx = -delta.x() * (m_xMax - m_xMin) / area.width();
-        double dy = delta.y() * (m_yMax - m_yMin) / area.height();
+        double      dx   = -delta.x() * (m_xMax - m_xMin) / area.width();
+        double      dy   = delta.y() * (m_yMax - m_yMin) / area.height();
 
         if (m_zoomMode != ZoomMode::YOnly)
         {
@@ -209,7 +212,7 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
     }
     else
     {
-        for (const auto &c : m_cursorsX)
+        for (const auto& c : m_cursorsX)
         {
             if (c.enabled())
             {
@@ -227,7 +230,7 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
             if (m_legend.lastRenderedRect().contains(event->pos()))
             {
                 setCursor(Qt::PointingHandCursor);
-                update(); // Forzar repintado
+                update();  // Forzar repintado
                 event->accept();
                 return;
             }
@@ -243,7 +246,7 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
 // ==========================================================================
 //  Mouse release
 // ==========================================================================
-void RealtimePlot::mouseReleaseEvent(QMouseEvent *event)
+void RealtimePlot::mouseReleaseEvent(QMouseEvent* event)
 {
     if (m_panning)
     {
@@ -307,7 +310,7 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent *event)
 // ==========================================================================
 //  Double-click → auto-fit
 // ==========================================================================
-void RealtimePlot::mouseDoubleClickEvent(QMouseEvent *event)
+void RealtimePlot::mouseDoubleClickEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::LeftButton)
     {
@@ -320,28 +323,28 @@ void RealtimePlot::mouseDoubleClickEvent(QMouseEvent *event)
 // ==========================================================================
 //  Keyboard shortcuts
 // ==========================================================================
-void RealtimePlot::keyPressEvent(QKeyEvent *event)
+void RealtimePlot::keyPressEvent(QKeyEvent* event)
 {
     switch (event->key())
     {
-    case Qt::Key_F:
-    case Qt::Key_Space:
-        autoFit();
-        update();
-        break;
-    case Qt::Key_X:
-        setZoomMode(ZoomMode::XOnly);
-        break;
-    case Qt::Key_Y:
-        setZoomMode(ZoomMode::YOnly);
-        break;
-    case Qt::Key_B: // Both
-        setZoomMode(ZoomMode::XY);
-        break;
+        case Qt::Key_F:
+        case Qt::Key_Space:
+            autoFit();
+            update();
+            break;
+        case Qt::Key_X:
+            setZoomMode(ZoomMode::XOnly);
+            break;
+        case Qt::Key_Y:
+            setZoomMode(ZoomMode::YOnly);
+            break;
+        case Qt::Key_B:  // Both
+            setZoomMode(ZoomMode::XY);
+            break;
 
-    default:
-        QOpenGLWidget::keyPressEvent(event);
-        return;
+        default:
+            QOpenGLWidget::keyPressEvent(event);
+            return;
     }
     event->accept();
 }

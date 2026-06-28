@@ -1,24 +1,21 @@
 #include "RealtimePlot.h"
 
-#include <QWheelEvent>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QPainter>
 #include <QApplication>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QWheelEvent>
 #include <QtMath>
 #include <algorithm>
 #include <cmath>
 
-const std::vector<QColor> RealtimePlot::colorList =
-    {
-        Qt::red,
-        Qt::yellow,
-        Qt::green};
+const std::vector<QColor> RealtimePlot::colorList = {Qt::red, Qt::yellow,
+                                                     Qt::green};
 
 // --------------------------------------------------------------------------
 // Vertex / fragment shaders (GLSL 1.20 – compatible with GL 2.1 and ES 2.0)
 // --------------------------------------------------------------------------
-static const char *kVertSrc = R"GLSL(
+static const char* kVertSrc = R"GLSL(
     attribute vec2 a_position;
     uniform   vec2 u_scale;
     uniform   vec2 u_offset;
@@ -28,7 +25,7 @@ static const char *kVertSrc = R"GLSL(
     }
 )GLSL";
 
-static const char *kFragSrc = R"GLSL(
+static const char* kFragSrc = R"GLSL(
     uniform vec4 u_color;
     void main() {
         gl_FragColor = u_color;
@@ -36,18 +33,22 @@ static const char *kFragSrc = R"GLSL(
 )GLSL";
 
 // ==========================================================================
-RealtimePlot::RealtimePlot(QWidget *parent)
-    : QOpenGLWidget(parent), m_timer(new QTimer(this)),
-      m_cursorsX{RtpCursor(1, Qt::green, RtpCursor::MarkerStyle::MARKER_SIMPLE), RtpCursor(2, QColor(20, 170, 255))},
-      m_cursorRange(1, QColor(255, 200, 50, 200), RtpCursor::MarkerStyle::MARKER_SIMPLE)
+RealtimePlot::RealtimePlot(QWidget* parent)
+    : QOpenGLWidget(parent),
+      m_timer(new QTimer(this)),
+      m_cursorsX{RtpCursor(1, Qt::green, RtpCursor::MarkerStyle::MARKER_SIMPLE),
+                 RtpCursor(2, QColor(20, 170, 255))},
+      m_cursorRange(1, QColor(255, 200, 50, 200),
+                    RtpCursor::MarkerStyle::MARKER_SIMPLE)
 {
     setFocusPolicy(Qt::StrongFocus);
     setMouseTracking(true);
 
-    m_tickFont = QFont("Monospace", 12);
+    m_tickFont  = QFont("Monospace", 12);
     m_labelFont = QFont("Sans", 9, QFont::Bold);
 
-    connect(m_timer, &QTimer::timeout, this, QOverload<>::of(&RealtimePlot::update));
+    connect(m_timer, &QTimer::timeout, this,
+            QOverload<>::of(&RealtimePlot::update));
 
     m_legend.setSeriesSource(&m_series);
     m_cursorsX[0].setSeriesSource(&m_series);
@@ -67,13 +68,19 @@ void RealtimePlot::setRefreshRate(int fps)
     m_timer->setInterval(fps > 0 ? 1000 / fps : 16);
 }
 
-void RealtimePlot::start() { m_timer->start(); }
-void RealtimePlot::stop() { m_timer->stop(); }
+void RealtimePlot::start()
+{
+    m_timer->start();
+}
+void RealtimePlot::stop()
+{
+    m_timer->stop();
+}
 
 // --------------------------------------------------------------------------
-std::shared_ptr<PlotSeries> RealtimePlot::addSeries(const QString &name,
-                                                    QColor color,
-                                                    size_t maxPoints)
+std::shared_ptr<PlotSeries> RealtimePlot::addSeries(const QString& name,
+                                                    QColor         color,
+                                                    size_t         maxPoints)
 {
     auto s = std::make_shared<PlotSeries>(name, color);
     addSeries(s);
@@ -85,7 +92,7 @@ void RealtimePlot::addSeries(std::shared_ptr<PlotSeries> serie)
     m_series.push_back(serie);
 }
 
-void RealtimePlot::removeSeries(const std::shared_ptr<PlotSeries> &series)
+void RealtimePlot::removeSeries(const std::shared_ptr<PlotSeries>& series)
 {
     m_series.erase(std::remove(m_series.begin(), m_series.end(), series),
                    m_series.end());
@@ -97,12 +104,13 @@ void RealtimePlot::clearSeries()
 }
 
 // --------------------------------------------------------------------------
-void RealtimePlot::setViewRange(double xMin, double xMax, double yMin, double yMax)
+void RealtimePlot::setViewRange(double xMin, double xMax, double yMin,
+                                double yMax)
 {
-    m_xMin = xMin;
-    m_xMax = xMax;
-    m_yMin = yMin;
-    m_yMax = yMax;
+    m_xMin            = xMin;
+    m_xMax            = xMax;
+    m_yMin            = yMin;
+    m_yMax            = yMax;
     m_viewInitialized = true;
     emitViewChanged();
 }
@@ -116,18 +124,18 @@ void RealtimePlot::autoFit()
 {
     double xMin = 1e300, xMax = -1e300;
     double yMin = 1e300, yMax = -1e300;
-    bool any = false;
+    bool   any = false;
 
-    for (const auto &s : m_series)
+    for (const auto& s : m_series)
     {
         if (!s->visible() || s->points().empty())
             continue;
         auto lk = s->lock();
-        xMin = std::min(xMin, s->xMin());
-        xMax = std::max(xMax, s->xMax());
-        yMin = std::min(yMin, s->yMin());
-        yMax = std::max(yMax, s->yMax());
-        any = true;
+        xMin    = std::min(xMin, s->xMin());
+        xMax    = std::max(xMax, s->xMax());
+        yMin    = std::min(yMin, s->yMin());
+        yMax    = std::max(yMax, s->yMax());
+        any     = true;
     }
 
     if (!any)
@@ -149,26 +157,25 @@ void RealtimePlot::autoFit()
 // --------------------------------------------------------------------------
 QRect RealtimePlot::plotArea() const
 {
-    return QRect(m_margin.left,
-                 m_margin.top,
+    return QRect(m_margin.left, m_margin.top,
                  width() - m_margin.left - m_margin.right,
                  height() - m_margin.top - m_margin.bottom);
 }
 
 QPointF RealtimePlot::pixelToData(QPoint px) const
 {
-    QRect area = plotArea();
-    double fx = static_cast<double>(px.x() - area.left()) / area.width();
-    double fy = static_cast<double>(px.y() - area.top()) / area.height();
+    QRect  area = plotArea();
+    double fx   = static_cast<double>(px.x() - area.left()) / area.width();
+    double fy   = static_cast<double>(px.y() - area.top()) / area.height();
     return {m_xMin + fx * (m_xMax - m_xMin),
-            m_yMax - fy * (m_yMax - m_yMin)}; // Y is flipped
+            m_yMax - fy * (m_yMax - m_yMin)};  // Y is flipped
 }
 
 QPoint RealtimePlot::dataToPixel(double x, double y) const
 {
-    QRect area = plotArea();
-    double fx = (x - m_xMin) / (m_xMax - m_xMin);
-    double fy = (y - m_yMin) / (m_yMax - m_yMin);
+    QRect  area = plotArea();
+    double fx   = (x - m_xMin) / (m_xMax - m_xMin);
+    double fy   = (y - m_yMin) / (m_yMax - m_yMin);
     return {area.left() + static_cast<int>(fx * area.width()),
             area.bottom() - static_cast<int>(fy * area.height())};
 }

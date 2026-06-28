@@ -2,23 +2,40 @@
 
 #include <QPainterPath>
 
-RtpRangeCursor::RtpRangeCursor(int index, QColor color, RtpCursor::MarkerStyle style) : m_color(color), m_cursorIndex(index), m_style(style), m_textColor(Qt::red), m_bgColor(Qt::black),
-                                                                                        m_cStart(index, color, style), m_cEnd(index, color, style)
+RtpRangeCursor::RtpRangeCursor(int index, QColor color,
+                               RtpCursor::MarkerStyle style)
+    : m_color(color),
+      m_cursorIndex(index),
+      m_style(style),
+      m_textColor(Qt::red),
+      m_bgColor(Qt::black),
+      m_cStart(index, color, style),
+      m_cEnd(index, color, style)
+{}
+
+void RtpRangeCursor::setFont(const QFont& font)
 {
+    m_font = font;
+}
+void RtpRangeCursor::setTextColor(const QColor& color)
+{
+    m_textColor = color;
+}
+void RtpRangeCursor::setBackgroundColor(const QColor& bgColor)
+{
+    m_bgColor = bgColor;
 }
 
-void RtpRangeCursor::setFont(const QFont &font) { m_font = font; }
-void RtpRangeCursor::setTextColor(const QColor &color) { m_textColor = color; }
-void RtpRangeCursor::setBackgroundColor(const QColor &bgColor) { m_bgColor = bgColor; }
-
-bool RtpRangeCursor::contains(const QPoint &pos) const
+bool RtpRangeCursor::contains(const QPoint& pos) const
 {
     if (!m_isEnabled)
         return false;
     return m_cStart.contains(pos) || m_cEnd.contains(pos);
 }
 
-RtpCursor *RtpRangeCursor::mousePressEvent(QMouseEvent *event, int currentPixelStart, int currentPixelEnd)
+RtpCursor* RtpRangeCursor::mousePressEvent(QMouseEvent* event,
+                                           int          currentPixelStart,
+                                           int          currentPixelEnd)
 {
     if (!m_isEnabled)
         return nullptr;
@@ -37,7 +54,8 @@ RtpCursor *RtpRangeCursor::mousePressEvent(QMouseEvent *event, int currentPixelS
     return nullptr;
 }
 
-bool RtpRangeCursor::mouseMoveEvent(QMouseEvent *event, const QRect &plotArea, int &outNewPixelX)
+bool RtpRangeCursor::mouseMoveEvent(QMouseEvent* event, const QRect& plotArea,
+                                    int& outNewPixelX)
 {
     if (!m_isDragging)
         return false;
@@ -54,21 +72,18 @@ bool RtpRangeCursor::mouseMoveEvent(QMouseEvent *event, const QRect &plotArea, i
     return true;
 }
 
-void RtpRangeCursor::mouseReleaseEvent(QMouseEvent *event)
+void RtpRangeCursor::mouseReleaseEvent(QMouseEvent* event)
 {
     m_isDragging = false;
 }
 
-void RtpRangeCursor::draw(QPainter &painter,
-                          const QRect &plotArea,
-                          int calculatedPixelStart,
-                          int calculatedPixelEnd)
+void RtpRangeCursor::draw(QPainter& painter, const QRect& plotArea,
+                          int calculatedPixelStart, int calculatedPixelEnd)
 {
     painter.save();
 
-    QRect zone(
-        QPoint(calculatedPixelStart, plotArea.top()),
-        QPoint(calculatedPixelEnd, plotArea.bottom()));
+    QRect zone(QPoint(calculatedPixelStart, plotArea.top()),
+               QPoint(calculatedPixelEnd, plotArea.bottom()));
 
     QColor bg = m_color.lighter(100);
     bg.setAlpha(20);
