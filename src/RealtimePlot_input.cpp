@@ -97,36 +97,21 @@ void RealtimePlot::mousePressEvent(QMouseEvent *event)
         }
     }
 
-    if (m_showXCursors)
+    for (auto &c : m_cursorsX)
     {
-        int px1 = dataToPixel(m_cursorX1, m_yMin).x();
-        int px2 = dataToPixel(m_cursorX2, m_yMin).x();
+        if (c.enabled())
+        {
+            int px1 = dataToPixel(c.getPos(), m_yMin).x();
+            // int px2 = dataToPixel(m_cursorX2, m_yMin).x();
 
-        // Comprobamos línea O caja de texto
-        if (std::abs(pos.x() - px1) <= m_clickTolerancePixels || m_rectLabelX1.contains(pos))
-        {
-            m_activeCursor = CursorType::X1;
-            m_cursorDeltaX = m_cursorX1 - pixelToData(pos).x();
-        }
-        else if (std::abs(pos.x() - px2) <= m_clickTolerancePixels || m_rectLabelX2.contains(pos))
-        {
-            m_activeCursor = CursorType::X2;
-            m_cursorDeltaX = m_cursorX2 - pixelToData(pos).x();
-        }
-    }
-
-    if (m_showYCursors && m_activeCursor == CursorType::None)
-    {
-        int py1 = dataToPixel(m_xMin, m_cursorY1).y();
-        int py2 = dataToPixel(m_xMin, m_cursorY2).y();
-
-        if (std::abs(pos.y() - py1) <= m_clickTolerancePixels || m_rectLabelY1.contains(pos))
-        {
-            m_activeCursor = CursorType::Y1;
-        }
-        else if (std::abs(pos.y() - py2) <= m_clickTolerancePixels || m_rectLabelY2.contains(pos))
-        {
-            m_activeCursor = CursorType::Y2;
+            if (c.mousePressEvent(event, px1))
+            {
+                m_activeCursorRef = &c;
+                m_cursorDeltaX = c.getPos() - pixelToData(pos).x();
+                update();
+                event->accept();
+                return;
+            }
         }
     }
 
@@ -183,65 +168,32 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
         }
     }
 
-    if (pos.y() > plotArea().bottom())
+    /*if (pos.y() > plotArea().bottom())
     {
         setCursor(Qt::SizeHorCursor);
         event->accept();
         return;
-    }
+    }*/
 
     bool overCursor = false;
 
-    if (m_showXCursors)
+    if (m_activeCursorRef)
     {
-        int px1 = dataToPixel(m_cursorX1, m_yMin).x();
-        int px2 = dataToPixel(m_cursorX2, m_yMin).x();
+        int targetPixelX = 0;
 
-        if (std::abs(pos.x() - px1) <= m_clickTolerancePixels || m_rectLabelX1.contains(pos) ||
-            std::abs(pos.x() - px2) <= m_clickTolerancePixels || m_rectLabelX2.contains(pos))
+        if (m_activeCursorRef->mouseMoveEvent(event, plotArea(), targetPixelX))
         {
+            double newDataX = pixelToData(QPoint(targetPixelX, 0)).x();
+            m_activeCursorRef->setPos(newDataX);
+
             setCursor(Qt::SizeHorCursor);
-            overCursor = true;
+
+            update();
+            event->accept();
+            return;
         }
     }
-
-    if (m_showYCursors && !overCursor)
-    {
-        int py1 = dataToPixel(m_xMin, m_cursorY1).y();
-        int py2 = dataToPixel(m_xMin, m_cursorY2).y();
-
-        if (std::abs(pos.y() - py1) <= m_clickTolerancePixels || m_rectLabelY1.contains(pos) ||
-            std::abs(pos.y() - py2) <= m_clickTolerancePixels || m_rectLabelY2.contains(pos))
-        {
-            setCursor(Qt::SizeVerCursor);
-            overCursor = true;
-        }
-    }
-
-    if (m_activeCursor != CursorType::None)
-    {
-        QPointF dataPos = pixelToData(pos);
-
-        if (m_activeCursor == CursorType::X1)
-            m_cursorX1 = dataPos.x() + m_cursorDeltaX;
-        else if (m_activeCursor == CursorType::X2)
-            m_cursorX2 = dataPos.x() + m_cursorDeltaX;
-        else if (m_activeCursor == CursorType::Y1)
-            m_cursorY1 = dataPos.y();
-        else if (m_activeCursor == CursorType::Y2)
-            m_cursorY2 = dataPos.y();
-
-        if (m_cursorX1 < m_xMin)
-            m_cursorX1 = m_xMin;
-        if (m_cursorX2 > m_xMax)
-            m_cursorX2 = m_xMax - 0.0001;
-
-        update(); // Forzar repintado inmediato
-        event->accept();
-        return;
-    }
-
-    if (m_panning)
+    else if (m_panning)
     {
         QPoint delta = event->pos() - m_lastMousePos;
         m_lastMousePos = event->pos();
@@ -273,6 +225,21 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent *event)
     {
         setCursor(Qt::ArrowCursor);
     }
+    else
+    {
+        for (const auto &c : m_cursorsX)
+        {
+            if (c.enabled())
+            {
+                if (c.contains(pos))
+                {
+                    setCursor(Qt::SizeHorCursor);
+                    event->accept();
+                    return;
+                }
+            }
+        }
+    }
 
     event->accept();
 }
@@ -292,6 +259,13 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent *event)
     {
         m_activeCursor = CursorType::None;
         unsetCursor();
+        event->accept();
+        return;
+    }
+
+    if (m_activeCursorRef)
+    {
+        m_activeCursorRef = nullptr;
         event->accept();
         return;
     }

@@ -30,6 +30,7 @@ add_library(realtimeplot STATIC
     src/RealtimePlot_paint2.cpp
     src/RealtimePlot_input.cpp
     src/components/RtpLegend.cpp
+    src/components/RtpCursor.cpp
 )
 
 target_include_directories(realtimeplot

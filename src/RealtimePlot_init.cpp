@@ -31,7 +31,8 @@ static const char *kFragSrc = R"GLSL(
 
 // ==========================================================================
 RealtimePlot::RealtimePlot(QWidget *parent)
-    : QOpenGLWidget(parent), m_timer(new QTimer(this))
+    : QOpenGLWidget(parent), m_timer(new QTimer(this)),
+      m_cursorsX{RtpCursor(1, Qt::red, RtpCursor::MarkerStyle::MARKER_SIMPLE), RtpCursor(2, Qt::red)}
 {
     setFocusPolicy(Qt::StrongFocus);
     setMouseTracking(true);
@@ -43,6 +44,8 @@ RealtimePlot::RealtimePlot(QWidget *parent)
     connect(m_timer, &QTimer::timeout, this, QOverload<>::of(&RealtimePlot::update));
 
     m_legend.setSeriesSource(&m_series);
+    m_cursorsX[0].setSeriesSource(&m_series);
+    m_cursorsX[1].setSeriesSource(&m_series);
 }
 
 RealtimePlot::~RealtimePlot()

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <chrono>
+#include <ranges>
 
 // ==========================================================================
 //  Vertex / Fragment shaders
@@ -193,7 +194,17 @@ void RealtimePlot::paintGL()
         }
     }
 
-    drawCursorH(painter);
+    // drawCursorH(painter);
+    int cIndex = 1;
+    for (auto it = std::rbegin(m_cursorsX); it != std::rend(m_cursorsX); ++it)
+    {
+        auto &c = *it;
+        c.draw(painter, plotArea(), dataToPixel(c.getPos(), 0).x(), QString("Marker %1").arg(cIndex++));
+    }
+    /*for (auto &c : std::views::reverse(m_cursorsX))
+    {
+    c.draw(painter, plotArea(), dataToPixel(c.getPos(), 0).x(), QString("Marker %1").arg(cIndex++));
+    }*/
 
     painter.end();
 

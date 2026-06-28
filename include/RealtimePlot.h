@@ -15,6 +15,7 @@
 #include "PlotSeries.h"
 #include "PlotAxis.h"
 #include "components/RtpLegend.h"
+#include "components/RtpCursor.h"
 
 /**
  * @brief High-performance real-time plot widget using OpenGL.
@@ -197,6 +198,9 @@ private:
     bool m_shaderReady = false;
 
     // --- Cursors ---
+
+    RtpCursor m_cursorsX[2];
+
     double m_cursorX1 = 0.0;
     double m_cursorX2 = 0.0;
     double m_cursorY1 = 0.0;
@@ -217,6 +221,7 @@ private:
 
     // Gestión del arrastre
     CursorType m_activeCursor = CursorType::None;
+    RtpCursor *m_activeCursorRef = nullptr;
     const int m_clickTolerancePixels = 7;
 
     RtpLegend m_legend;

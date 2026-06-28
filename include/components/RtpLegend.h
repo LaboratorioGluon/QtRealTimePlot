@@ -3,9 +3,7 @@
 
 #include <QPainter>
 #include <QVector>
-
-// Declaración hacia adelante (Forward declaration) de tu clase real
-class PlotSeries;
+#include "PlotSeries.h"
 
 class RtpLegend
 {
