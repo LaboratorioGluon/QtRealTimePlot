@@ -138,8 +138,23 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
 
     // ------------------------------------------------------------------ cursors
 
+    /**
+     * @brief Add cursor in the the center of the current view.
+     */
     void addCursor();
+
+    /**
+     * @brief Add cursor in position.
+     * @param xPos Position in data coordinates to place the cursor
+     */
     void addCursor(double xPos);
+
+    void setRangeCursorEnable(bool enable) { m_cursorRange.enable(enable); }
+    void setRangeCursorPos(double start, double end)
+    {
+        m_cursorRange.setPosStart(start);
+        m_cursorRange.setPosEnd(end);
+    };
 
     // ------------------------------------------------------------------ view
 

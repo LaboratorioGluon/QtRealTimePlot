@@ -116,8 +116,9 @@ class MainWindow : public QMainWindow
         btnFit->setCheckable(true);
         btnFit->setChecked(true);
 
-        auto* btnGrid      = new QPushButton("Grid", this);
-        auto* btnNewCursor = new QPushButton("AddCursor", this);
+        auto* btnGrid           = new QPushButton("Grid", this);
+        auto* btnNewCursor      = new QPushButton("AddCursor", this);
+        auto* btnAddRangeCursor = new QPushButton("AddRangeCursor", this);
 
         auto* lblHelp = new QLabel(
             "<small>🖱 Wheel = zoom  |  Left drag = pan  |  Right drag = "
@@ -131,6 +132,7 @@ class MainWindow : public QMainWindow
         hlay->addWidget(btnFit);
         hlay->addWidget(btnGrid);
         hlay->addWidget(btnNewCursor);
+        hlay->addWidget(btnAddRangeCursor);
         hlay->addStretch();
         hlay->addWidget(lblHelp);
 
@@ -141,6 +143,8 @@ class MainWindow : public QMainWindow
 
         connect(btnNewCursor, &QPushButton::clicked, this,
                 [this]() { this->m_plot->addCursor(); });
+        connect(btnAddRangeCursor, &QPushButton::clicked, this,
+                [this]() { this->m_plot->setRangeCursorEnable(true); });
 
         connect(btnFit, &QPushButton::clicked, m_plot,
                 [this](bool a) { this->m_plot->setAutoZoom(a); });

@@ -50,10 +50,8 @@ RealtimePlot::RealtimePlot(QWidget* parent)
 
     m_legend.setSeriesSource(&m_series);
 
-    m_cursors.push_back(
-        RtpCursor(0, Qt::green, RtpCursor::MarkerStyle::MARKER_SIMPLE));
-
-    m_cursors[0].setSeriesSource(&m_series);
+    // set disabled by default.
+    m_cursorRange.enable(false);
 }
 
 RealtimePlot::~RealtimePlot()

@@ -72,6 +72,8 @@ void RtpRangeCursor::mouseReleaseEvent(QMouseEvent* event)
 void RtpRangeCursor::draw(QPainter& painter, const QRect& plotArea,
                           int calculatedPixelStart, int calculatedPixelEnd)
 {
+    if (!m_isEnabled)
+        return;
     painter.save();
 
     QRect zone(QPoint(calculatedPixelStart, plotArea.top()),
