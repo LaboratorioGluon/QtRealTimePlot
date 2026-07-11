@@ -7,7 +7,6 @@ RtpRangeCursor::RtpRangeCursor(int index, QColor color,
     : m_color(color),
       m_cursorIndex(index),
       m_style(style),
-      m_textColor(Qt::red),
       m_bgColor(Qt::black),
       m_cStart(index, color, style),
       m_cEnd(index, color, style)
@@ -17,10 +16,7 @@ void RtpRangeCursor::setFont(const QFont& font)
 {
     m_font = font;
 }
-void RtpRangeCursor::setTextColor(const QColor& color)
-{
-    m_textColor = color;
-}
+
 void RtpRangeCursor::setBackgroundColor(const QColor& bgColor)
 {
     m_bgColor = bgColor;

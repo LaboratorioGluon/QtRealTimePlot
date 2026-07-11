@@ -1,8 +1,7 @@
 #include "components/RtpLegend.h"
 #include "PlotSeries.h"
 
-RtpLegend::RtpLegend()
-    : m_textColor(Qt::black), m_bgColor(QColor(18, 18, 22, 220)), m_padding(6)
+RtpLegend::RtpLegend() : m_bgColor(QColor(18, 18, 22, 220)), m_padding(6)
 {
     m_font.setPointSize(9);
 }
@@ -15,10 +14,6 @@ void RtpLegend::setSeriesSource(
 void RtpLegend::setFont(const QFont& font)
 {
     m_font = font;
-}
-void RtpLegend::setTextColor(const QColor& color)
-{
-    m_textColor = color;
 }
 void RtpLegend::setBackgroundColor(const QColor& bgColor)
 {

@@ -3,21 +3,14 @@
 #include <QPainterPath>
 
 RtpCursor::RtpCursor(int index, QColor color, MarkerStyle style)
-    : m_color(color),
-      m_cursorIndex(index),
-      m_style(style),
-      m_textColor(Qt::red),
-      m_bgColor(Qt::black)
+    : m_color(color), m_cursorIndex(index), m_style(style), m_bgColor(Qt::black)
 {}
 
 void RtpCursor::setFont(const QFont& font)
 {
     m_font = font;
 }
-void RtpCursor::setTextColor(const QColor& color)
-{
-    m_textColor = color;
-}
+
 void RtpCursor::setBackgroundColor(const QColor& bgColor)
 {
     m_bgColor = bgColor;
@@ -78,7 +71,7 @@ void RtpCursor::drawFullMarker(QPainter& painter, const QRect& plotArea,
 
     int boxHeight = padding * 2 + lineHeight * (1 + m_seriesRef->size()) +
                     (m_seriesRef->size() * 2);
-    int boxWidth  = 120;
+    int boxWidth = 120;
 
     int boxX    = alignLeft ? (calculatedPixelX - boxWidth) : calculatedPixelX;
     m_labelRect = QRect(boxX, plotArea.top() + 5, boxWidth, boxHeight);
