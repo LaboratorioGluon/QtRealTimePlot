@@ -49,19 +49,6 @@ plot->start();
 ch1->pushPoint(timestamp_s, voltage_v);
 ```
 
----
-
-## Zoom modes
-
-Set via `setZoomMode()` or keyboard:
-
-| Key | Mode |
-|-----|------|
-| `B` | XY (default) |
-| `X` | X axis only |
-| `Y` | Y axis only |
-
----
 
 ## Zoom interactions
 
@@ -96,75 +83,4 @@ add_subdirectory(realtimeplot)
 target_link_libraries(your_target PRIVATE realtimeplot)
 ```
 
----
 
-## API reference
-
-### `RealtimePlot`
-
-```cpp
-// Series
-std::shared_ptr<PlotSeries> addSeries(name, color, maxPoints=10000);
-void removeSeries(series);
-void clearSeries();
-
-// View
-void   autoFit();
-void   setViewRange(xMin, xMax, yMin, yMax);
-QRectF viewRange() const;
-
-// Timer
-void setRefreshRate(int fps);   // default 60
-void start();
-void stop();
-
-// Zoom
-void     setZoomMode(ZoomMode::XY | XOnly | YOnly);
-ZoomMode zoomMode() const;
-
-// Auto-scroll
-void setAutoScroll(bool);
-void setAutoScrollWindow(double dataUnits);
-
-// Style
-void setTitle/XLabel/YLabel(QString);
-void setBackgroundColor/AxisColor/TextColor(QColor);
-void setLegendVisible(bool);
-void setGrid(GridStyle{enabled, color});
-void setMargins(MarginPx{left, right, top, bottom});
-
-// Signal
-void viewChanged(double xMin, double xMax, double yMin, double yMax);
-```
-
-### `PlotSeries`
-
-```cpp
-// Thread-safe data ingestion
-void pushPoint(double x, double y);
-void clear();
-
-// Appearance
-void setColor(QColor);
-void setLineWidth(float);
-void setVisible(bool);
-void setMaxPoints(size_t);   // circular buffer size
-
-// Bounds (valid after at least one pushPoint)
-double xMin(), xMax(), yMin(), yMax();
-```
-
----
-
-## Performance notes
-
-- **CPU transform**: data→pixel conversion happens on the CPU before uploading
-  vertices. For ≤50,000 visible points per series this is imperceptible at 60 Hz.
-  For higher throughput, consider switching to a VBO + GPU-side transform using
-  a `u_dataToNDC` uniform matrix.
-- **Circular buffer**: `PlotSeries` uses `std::deque` with a configurable cap.
-  At 1 kHz × 10 000 points = 10 s of history, which is comfortable for most
-  embedded telemetry use cases.
-- **Thread safety**: each series has its own `std::mutex`. The render thread
-  acquires it briefly per frame; the data thread acquires it per `pushPoint`.
-  Contention is negligible at typical embedded data rates (< 100 kHz).
