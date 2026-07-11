@@ -32,9 +32,7 @@ bool RtpCursor::mousePressEvent(QMouseEvent* event, int currentPixelX)
     if (m_labelRect.contains(pos) || m_lineHitbox.contains(pos))
     {
         m_isDragging = true;
-        m_dragOffset =
-            pos.x() -
-            currentPixelX;  // Usamos el píxel que el plot sabe que tenemos
+        m_dragOffset = pos.x() - currentPixelX;
         return true;
     }
     return false;
@@ -52,8 +50,7 @@ bool RtpCursor::mouseMoveEvent(QMouseEvent* event, const QRect& plotArea,
     if (newPixelX > plotArea.right())
         newPixelX = plotArea.right();
 
-    qDebug() << "Movin cursor to " << newPixelX;
-    outNewPixelX = newPixelX;  // Devolvemos el píxel calculado al plot
+    outNewPixelX = newPixelX;
     return true;
 }
 
@@ -65,6 +62,7 @@ void RtpCursor::mouseReleaseEvent(QMouseEvent* event)
 void RtpCursor::drawFullMarker(QPainter& painter, const QRect& plotArea,
                                int calculatedPixelX, bool alignLeft)
 {
+
     QFontMetrics fm(m_font);
     int          lineHeight = fm.height();
     int          padding    = 4;
@@ -110,10 +108,12 @@ void RtpCursor::drawSimpleMarker(QPainter& painter, const QRect& plotArea,
     painter.save();
     painter.setRenderHint(QPainter::Antialiasing, true);
 
+    // Marker configuration
     const int rectWidth  = 18;
     const int rectHeight = 24;
     const int notchSize  = rectWidth / 2;
 
+    // Draw marker box with pointing triangle
     QPainterPath path;
     path.moveTo(0, 0);
 
@@ -166,36 +166,35 @@ void RtpCursor::draw(QPainter& painter, const QRect& plotArea,
                      int calculatedPixelX, const QString& mainLabel,
                      bool alignLeft)
 {
+
+    if (!m_isEnabled || calculatedPixelX < plotArea.left() ||
+        calculatedPixelX > plotArea.right())
     {
-        if (!m_isEnabled || calculatedPixelX < plotArea.left() ||
-            calculatedPixelX > plotArea.right())
-        {
-            m_isVisible  = false;
-            m_labelRect  = QRect();
-            m_lineHitbox = QRect();
-            return;
-        }
-        m_isVisible = true;
-
-        painter.save();
-        painter.setFont(m_font);
-
-        m_lineHitbox =
-            QRect(calculatedPixelX - 4, plotArea.top(), 8, plotArea.height());
-
-        painter.setPen(QPen(m_color, m_isDragging ? 2 : 1, Qt::SolidLine));
-        painter.drawLine(calculatedPixelX, plotArea.top(), calculatedPixelX,
-                         plotArea.bottom());
-
-        if (m_style == MarkerStyle::MARKER_SIMPLE)
-        {
-            drawSimpleMarker(painter, plotArea, calculatedPixelX, alignLeft);
-        }
-        else
-        {
-            drawFullMarker(painter, plotArea, calculatedPixelX, alignLeft);
-        }
-
-        painter.restore();
+        m_isVisible  = false;
+        m_labelRect  = QRect();
+        m_lineHitbox = QRect();
+        return;
     }
+    m_isVisible = true;
+
+    painter.save();
+    painter.setFont(m_font);
+
+    m_lineHitbox =
+        QRect(calculatedPixelX - 4, plotArea.top(), 8, plotArea.height());
+
+    painter.setPen(QPen(m_color, m_isDragging ? 2 : 1, Qt::SolidLine));
+    painter.drawLine(calculatedPixelX, plotArea.top(), calculatedPixelX,
+                     plotArea.bottom());
+
+    if (m_style == MarkerStyle::MARKER_SIMPLE)
+    {
+        drawSimpleMarker(painter, plotArea, calculatedPixelX, alignLeft);
+    }
+    else
+    {
+        drawFullMarker(painter, plotArea, calculatedPixelX, alignLeft);
+    }
+
+    painter.restore();
 }

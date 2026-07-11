@@ -23,6 +23,8 @@
  */
 class PlotSeries : protected QOpenGLFunctions
 {
+    friend class RealtimePlot;
+
    public:
     /**
      * @struct Point
@@ -50,22 +52,6 @@ class PlotSeries : protected QOpenGLFunctions
         double
             sumSq; /**< Sum of squares of Y values. Useful for Root Mean Square (RMS) or standard deviation. */
         size_t count; /**< Total number of samples processed in this block. */
-    };
-
-    /**
-     * @struct LodLevel
-     * @brief Container for a specific Level of Detail (LOD) tier.
-     *
-     * Stores decimated or simplified versions of the original signal to accelerate 
-     * rendering when viewing large time windows.
-     */
-    struct LodLevel {
-        std::vector<Point>
-            points; /**< Decimated points corresponding to this LOD level. */
-        std::vector<BlockStats>
-               stats; /**< Statistics of the blocks that make up this level. */
-        size_t lastProcessedCrudeSize =
-            0; /**< Amount of raw elements already processed for this level. */
     };
 
     /**
@@ -167,44 +153,6 @@ class PlotSeries : protected QOpenGLFunctions
     /** @return Current maximum absolute value along the Y-axis. */
     double yMax() const { return m_yMax; }
 
-    // VBO for OpenGL
-
-    /**
-     * @brief Initializes OpenGL objects (VBO and VAO) in the current context.
-     * @note Must be called from the thread that owns the OpenGL context (Render Thread).
-     */
-    void initGLBuffers();
-
-    /**
-     * @brief Releases and destroys the OpenGL buffers linked to this series.
-     */
-    void destroyGLBuffers();
-
-    /**
-     * @brief Updates the Vertex Buffer Object (VBO) content with current RAM data.
-     */
-    void updateVBO();
-
-    /**
-     * @brief Gets the Vertex Array Object managed by this series.
-     * @return Pointer to the QOpenGLVertexArrayObject instance.
-     */
-    QOpenGLVertexArrayObject* vao() { return &m_vao; }
-
-    /** @return Total vertex count currently stored in RAM. */
-    size_t vertexCount() const { return m_points.size(); }
-
-    /**
-     * @brief Gets a reference to the underlying Vertex Buffer Object (VBO).
-     * @return Reference to the VertexBuffer-type QOpenGLBuffer.
-     */
-    QOpenGLBuffer& vbo() { return m_vbo; }
-
-    /**
-     * @brief Synchronizes CPU memory data over to the GPU efficiently.
-     */
-    void syncWithGPU();
-
     /**
      * @brief Extracts a subset of points optimized for a target horizontal pixel resolution.
      *
@@ -229,12 +177,6 @@ class PlotSeries : protected QOpenGLFunctions
         return m_lodLevels[lod].points;
     }
 
-    /**
-     * @brief Uploads an external buffer of pre-filtered visible points straight to the GPU VBO.
-     * @param visiblePts Vector containing the pre-processed points to be written to VRAM.
-     */
-    void uploadVisiblePoints(const std::vector<Point>& visiblePts);
-
     /** @return Total number of entries in the main series buffer. */
     int size() { return m_points.size(); }
 
@@ -253,7 +195,23 @@ class PlotSeries : protected QOpenGLFunctions
      */
     PlotSeries::IntervalStats calculateIntervalStats(double xMin, double xMax);
 
-   private:
+   protected:
+    /**
+     * @struct LodLevel
+     * @brief Container for a specific Level of Detail (LOD) tier.
+     *
+     * Stores decimated or simplified versions of the original signal to accelerate 
+     * rendering when viewing large time windows.
+     */
+    struct LodLevel {
+        std::vector<Point>
+            points; /**< Decimated points corresponding to this LOD level. */
+        std::vector<BlockStats>
+               stats; /**< Statistics of the blocks that make up this level. */
+        size_t lastProcessedCrudeSize =
+            0; /**< Amount of raw elements already processed for this level. */
+    };
+
     /**
      * @brief Dynamically expands the current bounding box metrics to encompass a new point.
      * @param p Point structure to evaluate.
@@ -309,4 +267,48 @@ class PlotSeries : protected QOpenGLFunctions
         false; /**< Confirms whether initGLBuffers was run successfully. */
     size_t m_pointsInGPU =
         0; /**< Total count of vertices currently allocated on VRAM. */
+
+    // VBO for OpenGL
+
+    /**
+     * @brief Initializes OpenGL objects (VBO and VAO) in the current context.
+     * @note Must be called from the thread that owns the OpenGL context (Render Thread).
+     */
+    void initGLBuffers();
+
+    /**
+     * @brief Releases and destroys the OpenGL buffers linked to this series.
+     */
+    void destroyGLBuffers();
+
+    /**
+     * @brief Updates the Vertex Buffer Object (VBO) content with current RAM data.
+     */
+    void updateVBO();
+
+    /**
+     * @brief Gets the Vertex Array Object managed by this series.
+     * @return Pointer to the QOpenGLVertexArrayObject instance.
+     */
+    QOpenGLVertexArrayObject* vao() { return &m_vao; }
+
+    /** @return Total vertex count currently stored in RAM. */
+    size_t vertexCount() const { return m_points.size(); }
+
+    /**
+     * @brief Gets a reference to the underlying Vertex Buffer Object (VBO).
+     * @return Reference to the VertexBuffer-type QOpenGLBuffer.
+     */
+    QOpenGLBuffer& vbo() { return m_vbo; }
+
+    /**
+     * @brief Synchronizes CPU memory data over to the GPU efficiently.
+     */
+    void syncWithGPU();
+
+    /**
+     * @brief Uploads an external buffer of pre-filtered visible points straight to the GPU VBO.
+     * @param visiblePts Vector containing the pre-processed points to be written to VRAM.
+     */
+    void uploadVisiblePoints(const std::vector<Point>& visiblePts);
 };

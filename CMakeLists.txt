@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+option(ENABLE_CPPCHECK "Run Cppcheck in compilation" OFF)
+
 # ============================================================
 # Qt packages
 # ============================================================
@@ -23,12 +25,19 @@ find_program(CPPCHECK_PATH cppcheck)
 find_program(CLANG_FORMAT_PATH clang-format)
 
 if(CPPCHECK_PATH)
-    set(CMAKE_CXX_CPPCHECK "${CPPCHECK_PATH}" 
-        "--enable=all" 
-        "--suppress=missingInclude"
-        "--suppress=missingIncludeSystem"
-        "--inline-suppr"
-    )
+
+    if(ENABLE_CPPCHECK)
+        message(STATUS "Cppcheck: Enabled")
+        set(CMAKE_CXX_CPPCHECK "${CPPCHECK_PATH}" 
+            "--enable=all" 
+            "--suppress=missingInclude"
+            "--suppress=missingIncludeSystem"
+            "--inline-suppr"
+        )
+    else()
+        message(STATUS "Cppcheck: Disabled (Use -DENABLE_CPPCHECK=ON to enable it)")
+    endif()
+
 
     file(GLOB_RECURSE ALL_ANALYZE_FILES 
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
@@ -83,12 +92,10 @@ add_library(realtimeplot STATIC
     src/components/RtpRangeCursor.cpp
 )
 
-if(CPPCHECK_PATH)
+if(CPPCHECK_PATH AND ENABLE_CPPCHECK)
     set_target_properties(realtimeplot PROPERTIES
         CXX_CPPCHECK "${CPPCHECK_PATH};-I${CMAKE_CURRENT_SOURCE_DIR}/include;-I${CMAKE_CURRENT_SOURCE_DIR}/src;--enable=all;--library=qt;--inline-suppr;--suppress=unmatchedSuppression;--suppress=missingInclude;--suppress=missingIncludeSystem;--suppress=*:*_autogen*"
     )
-else()
-    message(WARNING "Cppcheck no encontrado. El análisis estático estará desactivado.")
 endif()
 
 if(CLANG_FORMAT_PATH)

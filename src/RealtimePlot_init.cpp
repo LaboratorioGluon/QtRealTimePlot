@@ -36,8 +36,6 @@ static const char* kFragSrc = R"GLSL(
 RealtimePlot::RealtimePlot(QWidget* parent)
     : QOpenGLWidget(parent),
       m_timer(new QTimer(this)),
-      m_cursorsX{RtpCursor(1, Qt::green, RtpCursor::MarkerStyle::MARKER_SIMPLE),
-                 RtpCursor(2, QColor(20, 170, 255))},
       m_cursorRange(1, QColor(255, 200, 50, 200),
                     RtpCursor::MarkerStyle::MARKER_SIMPLE)
 {
@@ -51,8 +49,11 @@ RealtimePlot::RealtimePlot(QWidget* parent)
             QOverload<>::of(&RealtimePlot::update));
 
     m_legend.setSeriesSource(&m_series);
-    m_cursorsX[0].setSeriesSource(&m_series);
-    m_cursorsX[1].setSeriesSource(&m_series);
+
+    m_cursors.push_back(
+        RtpCursor(0, Qt::green, RtpCursor::MarkerStyle::MARKER_SIMPLE));
+
+    m_cursors[0].setSeriesSource(&m_series);
 }
 
 RealtimePlot::~RealtimePlot()

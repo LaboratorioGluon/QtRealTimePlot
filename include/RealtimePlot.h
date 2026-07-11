@@ -313,7 +313,7 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
            m_xMax = 1.0; /**< Horizontal observation limit scope metrics. */
     double m_yMin = 0.0,
            m_yMax = 1.0; /**< Vertical observation limit scope metrics. */
-    bool   m_viewInitialized =
+    bool m_viewInitialized =
         false; /**< Safety control flag checking viewport validity. */
 
     // --- Style ---
@@ -364,8 +364,6 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
         false; /**< Pipeline validation control flag ensuring compilation stability. */
 
     // --- Cursors ---
-    RtpCursor m_cursorsX
-        [2]; /**< Baseline storage slots preserving primary system measurement cursors. */
     std::vector<RtpCursor>
         m_cursors; /**< Extended sequence payload containing dynamic user cursor additions. */
     RtpRangeCursor
@@ -373,12 +371,10 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
 
     bool m_showXCursors =
         true; /**< Group configuration filtering mask applied on vertical tracking items. */
-    bool m_showYCursors =
-        false; /**< Group configuration filtering mask applied on horizontal tracking items. */
 
     // Drag management
-    CursorType m_activeCursor = CursorType::
-        None; /**< Active cursor selection tracking identifier context mode. */
+    /**< Active cursor selection tracking identifier context mode. */
+    CursorType m_activeCursor = CursorType::None;
     RtpCursor* m_activeCursorRef =
         nullptr; /**< Direct memory reference address to dragged object context instance. */
     const int m_clickTolerancePixels =

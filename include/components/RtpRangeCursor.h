@@ -42,12 +42,6 @@ class RtpRangeCursor
     };
 
     /**
-     * @brief Configuration modifier to change text overlay annotation font layouts.
-     * @param font QFont structural asset payload specifying typeface.
-     */
-    void setFont(const QFont& font);
-
-    /**
      * @brief Adjusts primary text foreground overlay paintbrush color options.
      * @param color QColor description applied on textual outputs.
      */
@@ -123,6 +117,8 @@ class RtpRangeCursor
      */
     bool contains(const QPoint& pos) const;
 
+    bool checkReorder();
+
    private:
     bool m_isEnabled =
         true; /**< Structural execution state controlling drawing passes. */
@@ -136,8 +132,6 @@ class RtpRangeCursor
 
     int m_cursorIndex; /**< Identifying component order sequence metadata tracking token. */
 
-    QFont
-        m_font; /**< Typography configuration mapping settings onto readouts. */
     QColor
         m_color; /**< Primary outline and line rule display color definition. */
     QColor

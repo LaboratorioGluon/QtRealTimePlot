@@ -195,7 +195,7 @@ void RealtimePlot::paintGL()
 
     // drawCursorH(painter);
     int cIndex = 1;
-    for (auto it = std::rbegin(m_cursorsX); it != std::rend(m_cursorsX); ++it)
+    for (auto it = std::rbegin(m_cursors); it != std::rend(m_cursors); ++it)
     {
         auto& c = *it;
         c.draw(painter, plotArea(), dataToPixel(c.getPos(), 0).x(),

@@ -3,6 +3,7 @@
 
 #include <QPainter>
 #include <QVector>
+#include <memory>
 #include "PlotSeries.h"
 
 /**

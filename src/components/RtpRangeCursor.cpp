@@ -12,11 +12,6 @@ RtpRangeCursor::RtpRangeCursor(int index, QColor color,
       m_cEnd(index, color, style)
 {}
 
-void RtpRangeCursor::setFont(const QFont& font)
-{
-    m_font = font;
-}
-
 void RtpRangeCursor::setBackgroundColor(const QColor& bgColor)
 {
     m_bgColor = bgColor;
@@ -88,8 +83,22 @@ void RtpRangeCursor::draw(QPainter& painter, const QRect& plotArea,
         painter.setBrush(QBrush(bg));
         painter.setPen(Qt::PenStyle::NoPen);
         painter.drawRect(zone);
-        painter.restore();
     }
+    painter.restore();
     m_cStart.draw(painter, plotArea, calculatedPixelStart, "Start");
     m_cEnd.draw(painter, plotArea, calculatedPixelEnd, "End");
+}
+
+bool RtpRangeCursor::checkReorder()
+{
+    double prevStart = m_cStart.getPos();
+    double prevEnd   = m_cEnd.getPos();
+    if (prevStart > prevEnd)
+    {
+        m_cStart.setPos(prevEnd);
+        m_cEnd.setPos(prevStart);
+        qDebug() << "Reordered";
+        return true;
+    }
+    return false;
 }

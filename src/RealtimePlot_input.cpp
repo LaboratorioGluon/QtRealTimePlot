@@ -99,7 +99,7 @@ void RealtimePlot::mousePressEvent(QMouseEvent* event)
         }
     }
 
-    for (auto& c : m_cursorsX)
+    for (auto& c : m_cursors)
     {
         if (c.enabled())
         {
@@ -212,7 +212,7 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent* event)
     }
     else
     {
-        for (const auto& c : m_cursorsX)
+        for (const auto& c : m_cursors)
         {
             if (c.enabled())
             {
@@ -256,7 +256,9 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent* event)
 
     if (m_activeCursorRef)
     {
+        m_cursorRange.checkReorder();
         m_activeCursorRef = nullptr;
+
         unsetCursor();
         event->accept();
         return;
