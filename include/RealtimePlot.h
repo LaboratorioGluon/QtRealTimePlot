@@ -136,6 +136,11 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      */
     void clearSeries();
 
+    // ------------------------------------------------------------------ cursors
+
+    void addCursor();
+    void addCursor(double xPos);
+
     // ------------------------------------------------------------------ view
 
     /**
@@ -219,16 +224,6 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
                           : color,
                       style));
     };
-
-    /**
-     * @brief Visibility filter modifier targeted at multi-marker arrays.
-     * @param enableCursor1 Visibility flag assigned to track group components.
-     * @param enableCursor2 Reserved baseline flag identifier.
-     */
-    void enableCursors(bool enableCursor1, bool enableCursor2)
-    {
-        m_showXCursors = enableCursor1;
-    }
 
     /** @param enable Toggles state of the specialized range cursor subcomponent. */
     void enableRangeCursor(bool enable) { m_cursorRange.enable(enable); }
@@ -368,9 +363,6 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
         m_cursors; /**< Extended sequence payload containing dynamic user cursor additions. */
     RtpRangeCursor
         m_cursorRange; /**< Specialized range tracking cursor evaluation context module component. */
-
-    bool m_showXCursors =
-        true; /**< Group configuration filtering mask applied on vertical tracking items. */
 
     // Drag management
     /**< Active cursor selection tracking identifier context mode. */

@@ -33,6 +33,7 @@ RtpCursor* RtpRangeCursor::mousePressEvent(QMouseEvent* event,
 
     if (m_cStart.mousePressEvent(event, currentPixelStart))
     {
+
         qDebug() << "Activated start!";
         return &m_cStart;
     }
@@ -97,7 +98,9 @@ bool RtpRangeCursor::checkReorder()
     {
         m_cStart.setPos(prevEnd);
         m_cEnd.setPos(prevStart);
+#ifdef RTP_ENABLE_DEBUG
         qDebug() << "Reordered";
+#endif
         return true;
     }
     return false;

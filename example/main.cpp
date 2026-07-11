@@ -116,7 +116,8 @@ class MainWindow : public QMainWindow
         btnFit->setCheckable(true);
         btnFit->setChecked(true);
 
-        auto* btnGrid = new QPushButton("Grid", this);
+        auto* btnGrid      = new QPushButton("Grid", this);
+        auto* btnNewCursor = new QPushButton("AddCursor", this);
 
         auto* lblHelp = new QLabel(
             "<small>🖱 Wheel = zoom  |  Left drag = pan  |  Right drag = "
@@ -129,6 +130,7 @@ class MainWindow : public QMainWindow
         hlay->addSpacing(12);
         hlay->addWidget(btnFit);
         hlay->addWidget(btnGrid);
+        hlay->addWidget(btnNewCursor);
         hlay->addStretch();
         hlay->addWidget(lblHelp);
 
@@ -136,6 +138,9 @@ class MainWindow : public QMainWindow
             this->m_plot->setGrid({!this->m_plot->getGrid().enabled,
                                    this->m_plot->getGrid().color});
         });
+
+        connect(btnNewCursor, &QPushButton::clicked, this,
+                [this]() { this->m_plot->addCursor(); });
 
         connect(btnFit, &QPushButton::clicked, m_plot,
                 [this](bool a) { this->m_plot->setAutoZoom(a); });

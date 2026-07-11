@@ -10,6 +10,10 @@ set(CMAKE_AUTORCC ON)
 
 option(ENABLE_CPPCHECK "Run Cppcheck in compilation" OFF)
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose build type: Debug Release RelWithDebInfo MinSizeRel" FORCE)
+endif()
+
 # ============================================================
 # Qt packages
 # ============================================================
@@ -111,6 +115,10 @@ if(CLANG_FORMAT_PATH)
     )
 endif()
 
+target_compile_definitions(realtimeplot PRIVATE
+    $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
+)
+
 target_include_directories(realtimeplot
     PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -126,10 +134,14 @@ target_link_libraries(realtimeplot
 
 qt_standard_project_setup()
 
+
+
 add_executable(realtimeplot_demo
     example/main.cpp
 )
-
+target_compile_definitions(realtimeplot_demo PRIVATE
+    $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
+)
 
 target_link_libraries(realtimeplot_demo
     PRIVATE realtimeplot ${QT_LIBS}

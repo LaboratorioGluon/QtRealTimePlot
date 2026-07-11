@@ -79,8 +79,9 @@ void RealtimePlot::resizeGL(int /*w*/, int /*h*/)
 // ==========================================================================
 void RealtimePlot::paintGL()
 {
-
+#ifdef RTP_ENABLE_DEBUG
     auto startTimer = std::chrono::high_resolution_clock::now();
+#endif
 
     if (m_zoomAuto)
     {
@@ -193,7 +194,10 @@ void RealtimePlot::paintGL()
         }
     }
 
-    // drawCursorH(painter);
+    m_cursorRange.draw(painter, plotArea(),
+                       dataToPixel(m_cursorRange.getPosStart(), 0).x(),
+                       dataToPixel(m_cursorRange.getPosEnd(), 0).x());
+
     int cIndex = 1;
     for (auto it = std::rbegin(m_cursors); it != std::rend(m_cursors); ++it)
     {
@@ -202,19 +206,14 @@ void RealtimePlot::paintGL()
                QString("Marker %1").arg(cIndex++));
     }
 
-    m_cursorRange.draw(painter, plotArea(),
-                       dataToPixel(m_cursorRange.getPosStart(), 0).x(),
-                       dataToPixel(m_cursorRange.getPosEnd(), 0).x());
-
     painter.end();
 
     glFinish();
 
-    // 3. Calcular la diferencia de tiempo
+#ifdef RTP_ENABLE_DEBUG
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - startTimer;
 
-    // 4. Imprimir en la consola de Qt de forma controlada (ej: cada 30 frames para no saturar)
     static int frameCount = 0;
     if (++frameCount % 30 == 0)
     {
@@ -222,6 +221,7 @@ void RealtimePlot::paintGL()
                  << "| FPS teóricos:" << (1000.0 / elapsed.count())
                  << " | Puntos: " << m_series[0]->size();
     }
+#endif
 }
 
 // ==========================================================================
@@ -429,4 +429,19 @@ void RealtimePlot::drawLines(const std::vector<float>& verts, QColor color,
 
     m_shader->disableAttributeArray(loc);
     m_shader->release();
+}
+
+void RealtimePlot::addCursor()
+{
+    double position = (m_xMax - m_xMin) / 2;
+    addCursor(position);
+}
+
+void RealtimePlot::addCursor(double xPos)
+{
+
+    m_cursors.push_back(RtpCursor(m_cursors.size(), Qt::green,
+                                  RtpCursor::MarkerStyle::MARKER_SIMPLE));
+    m_cursors[m_cursors.size() - 1].setSeriesSource(&m_series);
+    m_cursors[m_cursors.size() - 1].setPos(xPos);
 }
