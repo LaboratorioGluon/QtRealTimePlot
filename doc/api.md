@@ -1,11 +1,5 @@
 # API Reference
 
-## Namespaces
-
-| Name | Description |
-|------|-------------|
-| [`conf`](conf.md#conf) |  |
-
 ## Classes
 
 | Name | Description |
