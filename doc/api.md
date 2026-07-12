@@ -26,6 +26,8 @@
 
 ## Variables
 
+{#kvertsrc}
+
 ### kVertSrc
 
 ```cpp
@@ -40,6 +42,8 @@ const char * kVertSrc = R"GLSL(
 )GLSL"
 ```
 
+{#kfragsrc}
+
 ### kFragSrc
 
 ```cpp
@@ -50,6 +54,8 @@ const char * kFragSrc = R"GLSL(
     }
 )GLSL"
 ```
+
+{#kvertsrc-1}
 
 ### kVertSrc
 
@@ -84,6 +90,8 @@ const char * kVertSrc = R"GLSL(
     }
 )GLSL"
 ```
+
+{#kfragsrc-1}
 
 ### kFragSrc
 

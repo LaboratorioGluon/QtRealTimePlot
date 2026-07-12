@@ -1,4 +1,4 @@
-
+{#plotaxis}
 
 # PlotAxis
 
@@ -33,6 +33,8 @@ Uses the "nice numbers" algorithm to choose a step size that produces 4–10 rea
 
 ---
 
+{#computeticks}
+
 ### computeTicks
 
 `static`
@@ -44,6 +46,8 @@ static QVector< Tick > computeTicks(double lo, double hi, int maxTicks = 8)
 Defined in include/PlotAxis.h:22
 
 ---
+
+{#formatvalue}
 
 ### formatValue
 
@@ -62,6 +66,8 @@ Defined in include/PlotAxis.h:25
 | `double` | [`niceNum`](#nicenum) `static` |  |
 
 ---
+
+{#nicenum}
 
 ### niceNum
 

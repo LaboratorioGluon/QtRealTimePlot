@@ -1,4 +1,4 @@
-
+{#rtpcursor}
 
 # RtpCursor
 
@@ -78,6 +78,8 @@ This class handles the rendering, positioning, and mouse interaction (hover, sel
 
 ---
 
+{#rtpcursor-1}
+
 ### RtpCursor
 
 ```cpp
@@ -98,6 +100,8 @@ Constructs a single tracker cursor instance.
 
 ---
 
+{#setseriessource}
+
 ### setSeriesSource
 
 `inline`
@@ -117,6 +121,8 @@ Pairs the cursor context directly to a tracked sequence dataset list.
 | `series` | `const std::vector< std::shared_ptr< [PlotSeries](PlotSeries.md#plotseries) > > *` | Constant pointer targeting the shared data channels tracking array vector. |
 
 ---
+
+{#draw}
 
 ### draw
 
@@ -140,6 +146,8 @@ Renders the cursor lines, intersection grips, and value tags onto the active vie
 
 ---
 
+{#setfont}
+
 ### setFont
 
 ```cpp
@@ -157,6 +165,8 @@ Updates typography configuration layouts applied onto numeric labels.
 | `font` | `const QFont &` | QFont structure containing desired text rendering attributes. |
 
 ---
+
+{#settextcolor}
 
 ### setTextColor
 
@@ -176,6 +186,8 @@ Sets primary fill color parameters assigned to label text strings.
 
 ---
 
+{#setbackgroundcolor}
+
 ### setBackgroundColor
 
 ```cpp
@@ -194,6 +206,8 @@ Sets solid background shading profile colors masking text box plates.
 
 ---
 
+{#setmargin}
+
 ### setMargin
 
 ```cpp
@@ -211,6 +225,8 @@ Prescribes internal edge padding boundary separation limits in screen pixels.
 | `marginPixels` | `const int` | Total pixel padding threshold space constraint value. |
 
 ---
+
+{#mousepressevent}
 
 ### mousePressEvent
 
@@ -233,6 +249,8 @@ True if selection focus hits interactive regions, triggering state capture lock.
 | `currentPixelX` | `int` | Extant horizontal position of cursor on screen. |
 
 ---
+
+{#mousemoveevent}
 
 ### mouseMoveEvent
 
@@ -257,6 +275,8 @@ True if a reposition sequence occurs requiring view updates.
 
 ---
 
+{#mousereleaseevent}
+
 ### mouseReleaseEvent
 
 ```cpp
@@ -274,6 +294,8 @@ Breaks active pointer capture tracking loops, releasing global control lock stat
 | `event` | `QMouseEvent *` | System mouse update data payload arguments forwarded by UI thread. |
 
 ---
+
+{#setpos}
 
 ### setPos
 
@@ -293,6 +315,8 @@ Defined in include/components/RtpCursor.h:114
 
 ---
 
+{#getpos}
+
 ### getPos
 
 `const` `inline`
@@ -308,6 +332,8 @@ Current absolute position mapped value tracked by cursor on X scale.
 
 ---
 
+{#enabled}
+
 ### enabled
 
 `const` `inline`
@@ -322,6 +348,8 @@ Defined in include/components/RtpCursor.h:119
 Computational processing loop permission status state verification flag.
 
 ---
+
+{#enable}
 
 ### enable
 
@@ -341,6 +369,8 @@ Defined in include/components/RtpCursor.h:121
 
 ---
 
+{#isvisible}
+
 ### isVisible
 
 `inline`
@@ -356,6 +386,8 @@ True if the cursor is currently being drawn on screen.
 
 ---
 
+{#isdragging}
+
 ### isDragging
 
 `const` `inline`
@@ -370,6 +402,8 @@ Defined in include/components/RtpCursor.h:127
 Mutual exclusion lock tracking flag testing active navigation click drag sequences.
 
 ---
+
+{#contains}
 
 ### contains
 
@@ -399,6 +433,8 @@ True if pointer sample context falls within focus collision geometries.
 | [`MarkerStyle`](#markerstyle)  | Visual rendering profiles for the cursor marker and its associated readout badge. |
 
 ---
+
+{#markerstyle}
 
 ### MarkerStyle
 
@@ -435,6 +471,8 @@ Visual rendering profiles for the cursor marker and its associated readout badge
 
 ---
 
+{#m_isenabled}
+
 ### m_isEnabled
 
 ```cpp
@@ -447,6 +485,8 @@ Defined in include/components/RtpCursor.h:137
 Internal execution state controlling drawing passes.
 
 ---
+
+{#m_xpos}
 
 ### m_xPos
 
@@ -461,6 +501,8 @@ Target coordinate placement metric tracking location across data domains.
 
 ---
 
+{#m_isdragging}
+
 ### m_isDragging
 
 ```cpp
@@ -473,6 +515,8 @@ Defined in include/components/RtpCursor.h:142
 Core tracking flag state tracking translation click drag cycles.
 
 ---
+
+{#m_dragoffset}
 
 ### m_dragOffset
 
@@ -487,6 +531,8 @@ Variable preserving delta pixel offsets across movement loops.
 
 ---
 
+{#m_cursorindex}
+
 ### m_cursorIndex
 
 ```cpp
@@ -498,6 +544,8 @@ Defined in include/components/RtpCursor.h:147
 Positional tracking queue metadata order sequence tag.
 
 ---
+
+{#m_isvisible}
 
 ### m_isVisible
 
@@ -512,6 +560,8 @@ Temporary runtime visibility evaluation storage state tracker.
 
 ---
 
+{#m_font}
+
 ### m_font
 
 ```cpp
@@ -523,6 +573,8 @@ Defined in include/components/RtpCursor.h:151
 Typography attribute profiles mapped onto label strings.
 
 ---
+
+{#m_color}
 
 ### m_color
 
@@ -536,6 +588,8 @@ Base coloring applied across outline rules and vectors.
 
 ---
 
+{#m_bgcolor}
+
 ### m_bgColor
 
 ```cpp
@@ -547,6 +601,8 @@ Defined in include/components/RtpCursor.h:155
 Solid background plate color applied behind data popups.
 
 ---
+
+{#m_labelrect}
 
 ### m_labelRect
 
@@ -560,6 +616,8 @@ Interactive geometry container boundaries enclosing value tooltip cards.
 
 ---
 
+{#m_linehitbox}
+
 ### m_lineHitbox
 
 ```cpp
@@ -572,6 +630,8 @@ Oversized virtual selection envelope padding thin lines to simplify target grab 
 
 ---
 
+{#m_style}
+
 ### m_style
 
 ```cpp
@@ -583,6 +643,8 @@ Defined in include/components/RtpCursor.h:163
 Active geometric decoration formatting behavior profile.
 
 ---
+
+{#m_seriesref}
 
 ### m_seriesRef
 
@@ -603,6 +665,8 @@ Shared repository address collection reference mapping active data vectors.
 
 ---
 
+{#drawfullmarker}
+
 ### drawFullMarker
 
 ```cpp
@@ -614,6 +678,8 @@ Defined in include/components/RtpCursor.h:171
 Geometry drawer executing viewport line layouts with floating readout badges.
 
 ---
+
+{#drawsimplemarker}
 
 ### drawSimpleMarker
 

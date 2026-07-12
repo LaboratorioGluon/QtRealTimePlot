@@ -1,4 +1,4 @@
-
+{#rtprangecursor}
 
 # RtpRangeCursor
 
@@ -73,6 +73,8 @@ This component coordinates a start boundary cursor and an end boundary cursor, c
 
 ---
 
+{#rtprangecursor-1}
+
 ### RtpRangeCursor
 
 ```cpp
@@ -92,6 +94,8 @@ Constructs a dual range selection cursor controller.
 | `style` | `[RtpCursor::MarkerStyle](RtpCursor.md#markerstyle)` | Geometric shape decoration setting applied onto layout bounds (Default: MARKER_FULL). |
 
 ---
+
+{#setseriessource-2}
 
 ### setSeriesSource
 
@@ -113,6 +117,8 @@ Maps the reference data tracking dataset channel lookup collection list.
 
 ---
 
+{#settextcolor-3}
+
 ### setTextColor
 
 ```cpp
@@ -130,6 +136,8 @@ Adjusts primary text foreground overlay paintbrush color options.
 | `color` | `const QColor &` | QColor description applied on textual outputs. |
 
 ---
+
+{#setbackgroundcolor-3}
 
 ### setBackgroundColor
 
@@ -149,6 +157,8 @@ Adjusts back-face readout boundary summary box mask fill colors.
 
 ---
 
+{#setmargin-2}
+
 ### setMargin
 
 ```cpp
@@ -166,6 +176,8 @@ Sets internal content margin spacing boundaries in screen pixel units.
 | `marginPixels` | `const int` | Absolute padding pixel threshold constraint value. |
 
 ---
+
+{#draw-2}
 
 ### draw
 
@@ -187,6 +199,8 @@ Renders lines, boundaries, highlights, and tooltips on the painting canvas.
 | `calculatedPixelEnd` | `int` | Screen pixel column tracking localization of end bounds. |
 
 ---
+
+{#mousepressevent-2}
 
 ### mousePressEvent
 
@@ -211,6 +225,8 @@ Underlying target cursor subcomponent reference capturing drag state, or nullptr
 
 ---
 
+{#mousemoveevent-2}
+
 ### mouseMoveEvent
 
 ```cpp
@@ -234,6 +250,8 @@ True if a modification pass took place requiring view update flags.
 
 ---
 
+{#mousereleaseevent-2}
+
 ### mouseReleaseEvent
 
 ```cpp
@@ -251,6 +269,8 @@ Finalizes boundary adjustments, unlocking state control loops.
 | `event` | `QMouseEvent *` | Native mouse release parameters forwarded by layout framework. |
 
 ---
+
+{#setposstart}
 
 ### setPosStart
 
@@ -270,6 +290,8 @@ Defined in include/components/RtpRangeCursor.h:99
 
 ---
 
+{#getposstart}
+
 ### getPosStart
 
 `const` `inline`
@@ -284,6 +306,8 @@ Defined in include/components/RtpRangeCursor.h:101
 Current absolute data space value placement of start boundary edge.
 
 ---
+
+{#setposend}
 
 ### setPosEnd
 
@@ -303,6 +327,8 @@ Defined in include/components/RtpRangeCursor.h:104
 
 ---
 
+{#getposend}
+
 ### getPosEnd
 
 `const` `inline`
@@ -318,6 +344,8 @@ Current absolute data space value placement of end boundary edge.
 
 ---
 
+{#enabled-2}
+
 ### enabled
 
 `const` `inline`
@@ -332,6 +360,8 @@ Defined in include/components/RtpRangeCursor.h:109
 Visibility and computation evaluation permission validation status state flag.
 
 ---
+
+{#enable-1}
 
 ### enable
 
@@ -350,6 +380,8 @@ Defined in include/components/RtpRangeCursor.h:111
 | `e` | `bool` | Toggle visibility and algorithmic evaluation processing permissions. |
 
 ---
+
+{#contains-1}
 
 ### contains
 
@@ -373,6 +405,8 @@ True if geometry intersections confirm pointing focus hits the element.
 | `pos` | `const QPoint &` | Intermittent screen space coordinate target evaluation candidate. |
 
 ---
+
+{#checkreorder}
 
 ### checkReorder
 
@@ -400,6 +434,8 @@ Defined in include/components/RtpRangeCursor.h:120
 
 ---
 
+{#m_isenabled-1}
+
 ### m_isEnabled
 
 ```cpp
@@ -412,6 +448,8 @@ Defined in include/components/RtpRangeCursor.h:123
 Structural execution state controlling drawing passes.
 
 ---
+
+{#m_xpos-1}
 
 ### m_xPos
 
@@ -426,6 +464,8 @@ Master anchor localization reference metric point tracker.
 
 ---
 
+{#m_isdragging-1}
+
 ### m_isDragging
 
 ```cpp
@@ -438,6 +478,8 @@ Defined in include/components/RtpRangeCursor.h:128
 Mutual exclusion flag lock tracking interactive relocation inputs.
 
 ---
+
+{#m_dragoffset-1}
 
 ### m_dragOffset
 
@@ -452,6 +494,8 @@ Offset value cache preserving layout adjustment tracking pixels.
 
 ---
 
+{#m_cursorindex-1}
+
 ### m_cursorIndex
 
 ```cpp
@@ -463,6 +507,8 @@ Defined in include/components/RtpRangeCursor.h:133
 Identifying component order sequence metadata tracking token.
 
 ---
+
+{#m_color-2}
 
 ### m_color
 
@@ -476,6 +522,8 @@ Primary outline and line rule display color definition.
 
 ---
 
+{#m_bgcolor-3}
+
 ### m_bgColor
 
 ```cpp
@@ -487,6 +535,8 @@ Defined in include/components/RtpRangeCursor.h:138
 Readout info box opaque background plate fill color profile.
 
 ---
+
+{#m_cstart}
 
 ### m_cStart
 
@@ -500,6 +550,8 @@ Core tracking subcomponent instance representing left bound marker.
 
 ---
 
+{#m_cend}
+
 ### m_cEnd
 
 ```cpp
@@ -512,6 +564,8 @@ Core tracking subcomponent instance representing right bound marker.
 
 ---
 
+{#m_style-1}
+
 ### m_style
 
 ```cpp
@@ -523,6 +577,8 @@ Defined in include/components/RtpRangeCursor.h:146
 Geometric styling shape type rendering configuration mode.
 
 ---
+
+{#m_seriesref-2}
 
 ### m_seriesRef
 

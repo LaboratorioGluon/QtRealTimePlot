@@ -1,4 +1,4 @@
-
+{#gridstyle}
 
 # GridStyle
 
@@ -30,6 +30,8 @@ Visual properties of the plot grid background.
 
 ---
 
+{#enabled-1}
+
 ### enabled
 
 ```cpp
@@ -41,6 +43,8 @@ Defined in include/RealtimePlot.h:71
 Toggle to draw or hide grid lines.
 
 ---
+
+{#color-1}
 
 ### color
 

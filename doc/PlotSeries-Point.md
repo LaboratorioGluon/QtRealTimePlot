@@ -1,4 +1,4 @@
-
+{#point}
 
 # Point
 
@@ -30,6 +30,8 @@ Represents a two-dimensional point in the chart.
 
 ---
 
+{#x}
+
 ### x
 
 ```cpp
@@ -41,6 +43,8 @@ Defined in include/PlotSeries.h:34
 X-axis coordinate (typically time or sample index).
 
 ---
+
+{#y}
 
 ### y
 

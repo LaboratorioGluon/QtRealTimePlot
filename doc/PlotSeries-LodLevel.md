@@ -1,4 +1,4 @@
-
+{#lodlevel}
 
 # LodLevel
 
@@ -34,6 +34,8 @@ Stores decimated or simplified versions of the original signal to accelerate ren
 
 ---
 
+{#points-1}
+
 ### points
 
 ```cpp
@@ -46,6 +48,8 @@ Decimated points corresponding to this LOD level.
 
 ---
 
+{#stats}
+
 ### stats
 
 ```cpp
@@ -57,6 +61,8 @@ Defined in include/PlotSeries.h:210
 Statistics of the blocks that make up this level.
 
 ---
+
+{#lastprocessedcrudesize}
 
 ### lastProcessedCrudeSize
 

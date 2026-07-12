@@ -1,4 +1,4 @@
-
+{#rtplegend}
 
 # RtpLegend
 
@@ -51,6 +51,8 @@ This class handles rendering the series names and color indicators on an overlay
 
 ---
 
+{#rtplegend-1}
+
 ### RtpLegend
 
 ```cpp
@@ -62,6 +64,8 @@ Defined in include/components/RtpLegend.h:23
 Constructs a plot legend overlay manager instance.
 
 ---
+
+{#setseriessource-1}
 
 ### setSeriesSource
 
@@ -81,6 +85,8 @@ Sets the data source pointer containing the collection of plot series.
 
 ---
 
+{#setfont-1}
+
 ### setFont
 
 ```cpp
@@ -98,6 +104,8 @@ Configuration modifier to change the text label font settings.
 | `font` | `const QFont &` | QFont styling properties to apply to the text items. |
 
 ---
+
+{#settextcolor-1}
 
 ### setTextColor
 
@@ -117,6 +125,8 @@ Adjusts the primary color used to draw text strings.
 
 ---
 
+{#setbackgroundcolor-1}
+
 ### setBackgroundColor
 
 ```cpp
@@ -134,6 +144,8 @@ Adjusts the background box solid mask color fill.
 | `bgColor` | `const QColor &` | QColor applied to wash the background bounding box area. |
 
 ---
+
+{#setmargin-1}
 
 ### setMargin
 
@@ -153,6 +165,8 @@ Sets the outer spacing metric around text bounding masks in screen pixels.
 
 ---
 
+{#draw-1}
+
 ### draw
 
 ```cpp
@@ -171,6 +185,8 @@ Renders the legend window overlay on the provided painter canvas context.
 | `plotRect` | `const QRect &` | Bounding pixel constraints enclosing the active chart area widget. |
 
 ---
+
+{#checkclick}
 
 ### checkClick
 
@@ -196,6 +212,8 @@ Integer index of the matched plot channel entry row, or -1 if the click missed.
 | `mousePos` | `const QPoint &` | Integer mouse coordinate position localized relative to the parent widget map. |
 
 ---
+
+{#lastrenderedrect}
 
 ### lastRenderedRect
 
@@ -225,6 +243,8 @@ QRect representing the screen space layout geometry envelope occupied by the com
 
 ---
 
+{#m_font-1}
+
 ### m_font
 
 ```cpp
@@ -236,6 +256,8 @@ Defined in include/components/RtpLegend.h:81
 Font specification asset mapping descriptor settings onto label outputs.
 
 ---
+
+{#m_bgcolor-1}
 
 ### m_bgColor
 
@@ -249,6 +271,8 @@ Solid clear back-face channel color metrics profile map configuration.
 
 ---
 
+{#m_padding}
+
 ### m_padding
 
 ```cpp
@@ -261,6 +285,8 @@ Inner alignment border separation distance threshold scaled in screen pixels.
 
 ---
 
+{#m_lastrect}
+
 ### m_lastRect
 
 ```cpp
@@ -272,6 +298,8 @@ Defined in include/components/RtpLegend.h:86
 Geometry box cache capturing metrics from the historical draw call operation.
 
 ---
+
+{#m_seriesref-1}
 
 ### m_seriesRef
 

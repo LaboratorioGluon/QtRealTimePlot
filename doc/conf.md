@@ -1,4 +1,4 @@
-
+{#conf}
 
 # conf
 
@@ -19,6 +19,8 @@
 
 ---
 
+{#project}
+
 ### project
 
 ```cpp
@@ -26,6 +28,8 @@ str project =  'QtRealTimePlot'
 ```
 
 ---
+
+{#copyright}
 
 ### copyright
 
@@ -35,6 +39,8 @@ str copyright =  '2026, Laboratorio Gluon'
 
 ---
 
+{#author}
+
 ### author
 
 ```cpp
@@ -42,6 +48,8 @@ str author =  'Laboratorio Gluon'
 ```
 
 ---
+
+{#extensions}
 
 ### extensions
 
@@ -51,6 +59,8 @@ list extensions =  ['sphinx.ext.autodoc','breathe']
 
 ---
 
+{#templates_path}
+
 ### templates_path
 
 ```cpp
@@ -58,6 +68,8 @@ list templates_path =  ['_templates']
 ```
 
 ---
+
+{#exclude_patterns}
 
 ### exclude_patterns
 
@@ -67,6 +79,8 @@ list exclude_patterns =  []
 
 ---
 
+{#html_theme}
+
 ### html_theme
 
 ```cpp
@@ -74,6 +88,8 @@ str html_theme =  'alabaster'
 ```
 
 ---
+
+{#html_static_path}
 
 ### html_static_path
 
@@ -83,6 +99,8 @@ list html_static_path =  ['_static']
 
 ---
 
+{#breathe_default_project}
+
 ### breathe_default_project
 
 ```cpp
@@ -90,6 +108,8 @@ str breathe_default_project =  "my_project"
 ```
 
 ---
+
+{#breathe_projects}
 
 ### breathe_projects
 

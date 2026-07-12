@@ -1,4 +1,4 @@
-
+{#marginpx}
 
 # MarginPx
 
@@ -34,6 +34,8 @@ Margin padding around the main viewport drawing area in screen pixels.
 
 ---
 
+{#left}
+
 ### left
 
 ```cpp
@@ -43,6 +45,8 @@ int left = 72
 Defined in include/RealtimePlot.h:81
 
 ---
+
+{#right}
 
 ### right
 
@@ -54,6 +58,8 @@ Defined in include/RealtimePlot.h:81
 
 ---
 
+{#top}
+
 ### top
 
 ```cpp
@@ -63,6 +69,8 @@ int top = 28
 Defined in include/RealtimePlot.h:81
 
 ---
+
+{#bottom}
 
 ### bottom
 

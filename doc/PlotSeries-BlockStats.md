@@ -1,4 +1,4 @@
-
+{#blockstats}
 
 # BlockStats
 
@@ -42,6 +42,8 @@ Used to optimize metric calculations over data subsets and for point reduction r
 
 ---
 
+{#xstart}
+
 ### xStart
 
 ```cpp
@@ -53,6 +55,8 @@ Defined in include/PlotSeries.h:46
 Starting X value of this data block.
 
 ---
+
+{#xend}
 
 ### xEnd
 
@@ -66,6 +70,8 @@ Ending X value of this data block.
 
 ---
 
+{#min}
+
 ### min
 
 ```cpp
@@ -77,6 +83,8 @@ Defined in include/PlotSeries.h:48
 Minimum Y value found within this block.
 
 ---
+
+{#max}
 
 ### max
 
@@ -90,6 +98,8 @@ Maximum Y value found within this block.
 
 ---
 
+{#sum}
+
 ### sum
 
 ```cpp
@@ -102,6 +112,8 @@ Accumulated sum of Y values. Useful for fast mean calculation (mean = sum / coun
 
 ---
 
+{#sumsq}
+
 ### sumSq
 
 ```cpp
@@ -113,6 +125,8 @@ Defined in include/PlotSeries.h:53
 Sum of squares of Y values. Useful for Root Mean Square (RMS) or standard deviation.
 
 ---
+
+{#count}
 
 ### count
 

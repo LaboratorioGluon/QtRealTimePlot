@@ -1,10 +1,6 @@
-
+{#tick}
 
 # Tick
-
-```cpp
-#include <PlotAxis.h>
-```
 
 ```cpp
 struct Tick
@@ -28,6 +24,8 @@ Defined in include/PlotAxis.h:16
 
 ---
 
+{#value}
+
 ### value
 
 ```cpp
@@ -37,6 +35,8 @@ double value
 Defined in include/PlotAxis.h:17
 
 ---
+
+{#label}
 
 ### label
 

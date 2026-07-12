@@ -1,4 +1,4 @@
-
+{#realtimeplot-1}
 
 # RealtimePlot
 
@@ -180,6 +180,8 @@ ch1->pushPoint(timestamp, voltage);
 
 ---
 
+{#realtimeplot-2}
+
 ### RealtimePlot
 
 `explicit`
@@ -200,6 +202,8 @@ Constructor for the high-performance OpenGL plot widget.
 
 ---
 
+{#realtimeplot-3}
+
 ### ~RealtimePlot
 
 `override`
@@ -213,6 +217,8 @@ Defined in include/RealtimePlot.h:107
 Destructor. Safely deallocates GL shaders, objects, and timers.
 
 ---
+
+{#addseries}
 
 ### addSeries
 
@@ -237,6 +243,8 @@ Shared pointer reference to the created [PlotSeries](PlotSeries.md#plotseries) i
 
 ---
 
+{#addseries-1}
+
 ### addSeries
 
 ```cpp
@@ -254,6 +262,8 @@ Adds a pre-existing externally built series into the rendering manager.
 | `serie` | `std::shared_ptr< [PlotSeries](PlotSeries.md#plotseries) >` | Shared pointer reference to the managed plot series. |
 
 ---
+
+{#removeseries}
 
 ### removeSeries
 
@@ -273,6 +283,8 @@ Deletes a targeted channel from the workspace.
 
 ---
 
+{#clearseries}
+
 ### clearSeries
 
 ```cpp
@@ -285,6 +297,8 @@ Completely drops all tracking datasets from the widget memory space.
 
 ---
 
+{#addcursor}
+
 ### addCursor
 
 ```cpp
@@ -296,6 +310,8 @@ Defined in include/RealtimePlot.h:144
 Add cursor in the the center of the current view.
 
 ---
+
+{#addcursor-1}
 
 ### addCursor
 
@@ -315,6 +331,8 @@ Add cursor in position.
 
 ---
 
+{#setrangecursorenable}
+
 ### setRangeCursorEnable
 
 `inline`
@@ -326,6 +344,8 @@ inline void setRangeCursorEnable(bool enable)
 Defined in include/RealtimePlot.h:152
 
 ---
+
+{#setrangecursorpos}
 
 ### setRangeCursorPos
 
@@ -339,6 +359,8 @@ Defined in include/RealtimePlot.h:153
 
 ---
 
+{#autofit}
+
 ### autoFit
 
 ```cpp
@@ -350,6 +372,8 @@ Defined in include/RealtimePlot.h:164
 Computes data boundaries and updates viewport range parameters to fit content.
 
 ---
+
+{#setviewrange}
 
 ### setViewRange
 
@@ -372,6 +396,8 @@ Explicitly overrides limits of the observable data window.
 
 ---
 
+{#viewrange}
+
 ### viewRange
 
 `const`
@@ -388,6 +414,8 @@ Retrieves a floating-point bounding rectangle representing current view extents.
 QRectF containment envelope where width=X scope and height=Y scope.
 
 ---
+
+{#setrefreshrate}
 
 ### setRefreshRate
 
@@ -407,6 +435,8 @@ Programs the target periodic timer update frequency.
 
 ---
 
+{#start}
+
 ### start
 
 ```cpp
@@ -419,6 +449,8 @@ Activates the rendering frame clock loop to poll and repaint new data points.
 
 ---
 
+{#stop}
+
 ### stop
 
 ```cpp
@@ -430,6 +462,8 @@ Defined in include/RealtimePlot.h:197
 Suspends frame clock ticks to freeze screen evaluation updates.
 
 ---
+
+{#setzoommode}
 
 ### setZoomMode
 
@@ -449,6 +483,8 @@ Defined in include/RealtimePlot.h:200
 
 ---
 
+{#zoommode}
+
 ### zoomMode
 
 `const` `inline`
@@ -463,6 +499,8 @@ Defined in include/RealtimePlot.h:202
 Current behavioral zoom constraint mode active on the canvas.
 
 ---
+
+{#setgrid}
 
 ### setGrid
 
@@ -482,6 +520,8 @@ Defined in include/RealtimePlot.h:205
 
 ---
 
+{#getgrid}
+
 ### getGrid
 
 `inline`
@@ -496,6 +536,8 @@ Defined in include/RealtimePlot.h:207
 Current active style metadata copy assigned to the grid lines.
 
 ---
+
+{#setmargins}
 
 ### setMargins
 
@@ -515,6 +557,8 @@ Defined in include/RealtimePlot.h:209
 
 ---
 
+{#setbackgroundcolor-2}
+
 ### setBackgroundColor
 
 `inline`
@@ -532,6 +576,8 @@ Defined in include/RealtimePlot.h:212
 | `c` | `QColor` | Solid background fill color applied during frame clearing pass. |
 
 ---
+
+{#setaxiscolor}
 
 ### setAxisColor
 
@@ -551,6 +597,8 @@ Defined in include/RealtimePlot.h:214
 
 ---
 
+{#settextcolor-2}
+
 ### setTextColor
 
 `inline`
@@ -568,6 +616,8 @@ Defined in include/RealtimePlot.h:216
 | `c` | `QColor` | Master color context parameter applied onto drawing tick numerals. |
 
 ---
+
+{#settitle}
 
 ### setTitle
 
@@ -587,6 +637,8 @@ Defined in include/RealtimePlot.h:219
 
 ---
 
+{#setxlabel}
+
 ### setXLabel
 
 `inline`
@@ -605,6 +657,8 @@ Defined in include/RealtimePlot.h:221
 
 ---
 
+{#setylabel}
+
 ### setYLabel
 
 `inline`
@@ -622,6 +676,8 @@ Defined in include/RealtimePlot.h:223
 | `l` | `const QString &` | Unit/description identifier string mapped near vertical layout line. |
 
 ---
+
+{#addcursor-2}
 
 ### addCursor
 
@@ -645,6 +701,8 @@ Adds an analytical marker tracking point onto the plot workspace.
 
 ---
 
+{#enablerangecursor}
+
 ### enableRangeCursor
 
 `inline`
@@ -663,6 +721,8 @@ Defined in include/RealtimePlot.h:244
 
 ---
 
+{#getrangecursor}
+
 ### getRangeCursor
 
 `inline`
@@ -677,6 +737,8 @@ Defined in include/RealtimePlot.h:246
 Pointer to internal range validation tracking subcomponent structure.
 
 ---
+
+{#setlegendvisible}
 
 ### setLegendVisible
 
@@ -695,6 +757,8 @@ Defined in include/RealtimePlot.h:249
 | `v` | `bool` | Toggles visibility of the interactive serial descriptor panel. |
 
 ---
+
+{#setautozoom}
 
 ### setAutoZoom
 
@@ -728,6 +792,8 @@ Defined in include/RealtimePlot.h:252
 
 ---
 
+{#initializegl}
+
 ### initializeGL
 
 `override`
@@ -739,6 +805,8 @@ void initializeGL() override
 Defined in include/RealtimePlot.h:266
 
 ---
+
+{#resizegl}
 
 ### resizeGL
 
@@ -752,6 +820,8 @@ Defined in include/RealtimePlot.h:267
 
 ---
 
+{#paintgl}
+
 ### paintGL
 
 `override`
@@ -763,6 +833,8 @@ void paintGL() override
 Defined in include/RealtimePlot.h:268
 
 ---
+
+{#wheelevent}
 
 ### wheelEvent
 
@@ -776,6 +848,8 @@ Defined in include/RealtimePlot.h:271
 
 ---
 
+{#mousepressevent-1}
+
 ### mousePressEvent
 
 `override`
@@ -787,6 +861,8 @@ void mousePressEvent(QMouseEvent * event) override
 Defined in include/RealtimePlot.h:272
 
 ---
+
+{#mousemoveevent-1}
 
 ### mouseMoveEvent
 
@@ -800,6 +876,8 @@ Defined in include/RealtimePlot.h:273
 
 ---
 
+{#mousereleaseevent-1}
+
 ### mouseReleaseEvent
 
 `override`
@@ -812,6 +890,8 @@ Defined in include/RealtimePlot.h:274
 
 ---
 
+{#mousedoubleclickevent}
+
 ### mouseDoubleClickEvent
 
 `override`
@@ -823,6 +903,8 @@ void mouseDoubleClickEvent(QMouseEvent * event) override
 Defined in include/RealtimePlot.h:275
 
 ---
+
+{#keypressevent}
 
 ### keyPressEvent
 
@@ -841,6 +923,8 @@ Defined in include/RealtimePlot.h:276
 | `void` | [`viewChanged`](#viewchanged)  | Signal fired whenever visible data window view boundaries are adjusted. |
 
 ---
+
+{#viewchanged}
 
 ### viewChanged
 
@@ -870,6 +954,8 @@ Signal fired whenever visible data window view boundaries are adjusted.
 
 ---
 
+{#zoommode-1}
+
 ### ZoomMode
 
 ```cpp
@@ -887,6 +973,8 @@ Constraints applied to zoom transformations.
 | `YOnly` | Lock X axis and scale Y axis exclusively. |
 
 ---
+
+{#cursortype}
 
 ### CursorType
 
@@ -946,6 +1034,8 @@ Identifiers for interactive cursors to manage focus and selection.
 
 ---
 
+{#m_series}
+
 ### m_series
 
 ```cpp
@@ -958,6 +1048,8 @@ Master data collection vector of tracked display streams.
 
 ---
 
+{#m_xmin-1}
+
 ### m_xMin
 
 ```cpp
@@ -967,6 +1059,8 @@ double m_xMin = 0.0
 Defined in include/RealtimePlot.h:322
 
 ---
+
+{#m_xmax-1}
 
 ### m_xMax
 
@@ -980,6 +1074,8 @@ Horizontal observation limit scope metrics.
 
 ---
 
+{#m_ymin-1}
+
 ### m_yMin
 
 ```cpp
@@ -989,6 +1085,8 @@ double m_yMin = 0.0
 Defined in include/RealtimePlot.h:324
 
 ---
+
+{#m_ymax-1}
 
 ### m_yMax
 
@@ -1002,6 +1100,8 @@ Vertical observation limit scope metrics.
 
 ---
 
+{#m_viewinitialized}
+
 ### m_viewInitialized
 
 ```cpp
@@ -1014,6 +1114,8 @@ Defined in include/RealtimePlot.h:326
 Safety control flag checking viewport validity.
 
 ---
+
+{#m_bgcolor-2}
 
 ### m_bgColor
 
@@ -1029,6 +1131,8 @@ Viewport baseline core wash clearing background fill color.
 
 ---
 
+{#m_axiscolor}
+
 ### m_axisColor
 
 ```cpp
@@ -1042,6 +1146,8 @@ Defined in include/RealtimePlot.h:333
 Primary reference edge line boundary color mapping indicator.
 
 ---
+
+{#m_textcolor}
 
 ### m_textColor
 
@@ -1057,6 +1163,8 @@ Numeric label and heading string font canvas printing layout color.
 
 ---
 
+{#m_grid}
+
 ### m_grid
 
 ```cpp
@@ -1068,6 +1176,8 @@ Defined in include/RealtimePlot.h:340
 Grid operational style definition map metadata payload.
 
 ---
+
+{#m_margin}
 
 ### m_margin
 
@@ -1081,6 +1191,8 @@ Functional margin offset allocation context matrix parameters.
 
 ---
 
+{#m_tickfont}
+
 ### m_tickFont
 
 ```cpp
@@ -1092,6 +1204,8 @@ Defined in include/RealtimePlot.h:344
 Font profile styling context configuration applied on axis numerals.
 
 ---
+
+{#m_labelfont}
 
 ### m_labelFont
 
@@ -1105,6 +1219,8 @@ Font profile styling context configuration applied on main titles.
 
 ---
 
+{#m_title}
+
 ### m_title
 
 ```cpp
@@ -1115,6 +1231,8 @@ Defined in include/RealtimePlot.h:347
 
 ---
 
+{#m_xlabel}
+
 ### m_xLabel
 
 ```cpp
@@ -1124,6 +1242,8 @@ QString m_xLabel
 Defined in include/RealtimePlot.h:347
 
 ---
+
+{#m_ylabel}
 
 ### m_yLabel
 
@@ -1136,6 +1256,8 @@ Defined in include/RealtimePlot.h:348
 Axis and plot header descriptive text label string records.
 
 ---
+
+{#m_legendvisible}
 
 ### m_legendVisible
 
@@ -1150,6 +1272,8 @@ Visibility override switch state assigned to control panel overlay.
 
 ---
 
+{#m_zoommode}
+
 ### m_zoomMode
 
 ```cpp
@@ -1162,6 +1286,8 @@ Defined in include/RealtimePlot.h:353
 Positional scaling locking parameter selection profile.
 
 ---
+
+{#m_zoomauto}
 
 ### m_zoomAuto
 
@@ -1176,6 +1302,8 @@ Automation tracking configuration state override directive.
 
 ---
 
+{#m_panning}
+
 ### m_panning
 
 ```cpp
@@ -1188,6 +1316,8 @@ Defined in include/RealtimePlot.h:359
 Intermittent active click drag translation tracking state indicator.
 
 ---
+
+{#m_selecting}
 
 ### m_selecting
 
@@ -1202,6 +1332,8 @@ Intermittent active click drag window box boundary select zoom indicator.
 
 ---
 
+{#m_lastmousepos}
+
 ### m_lastMousePos
 
 ```cpp
@@ -1214,6 +1346,8 @@ Intermediate tracking position coordinate of historical mouse move cursor event.
 
 ---
 
+{#m_selstart}
+
 ### m_selStart
 
 ```cpp
@@ -1223,6 +1357,8 @@ QPoint m_selStart
 Defined in include/RealtimePlot.h:365
 
 ---
+
+{#m_selend}
 
 ### m_selEnd
 
@@ -1235,6 +1371,8 @@ Defined in include/RealtimePlot.h:366
 Screen space box boundaries tracking indices for selection boxes.
 
 ---
+
+{#m_timer}
 
 ### m_timer
 
@@ -1249,6 +1387,8 @@ Internal refresh loop triggering clock interval execution manager.
 
 ---
 
+{#m_shader}
+
 ### m_shader
 
 ```cpp
@@ -1261,6 +1401,8 @@ Defined in include/RealtimePlot.h:371
 Compiled OpenGL program binding primitive geometry layout logic.
 
 ---
+
+{#m_shaderready}
 
 ### m_shaderReady
 
@@ -1275,6 +1417,8 @@ Pipeline validation control flag ensuring compilation stability.
 
 ---
 
+{#m_cursors}
+
 ### m_cursors
 
 ```cpp
@@ -1286,6 +1430,8 @@ Defined in include/RealtimePlot.h:378
 Extended sequence payload containing dynamic user cursor additions.
 
 ---
+
+{#m_cursorrange}
 
 ### m_cursorRange
 
@@ -1299,6 +1445,8 @@ Specialized range tracking cursor evaluation context module component.
 
 ---
 
+{#m_activecursor}
+
 ### m_activeCursor
 
 ```cpp
@@ -1310,6 +1458,8 @@ Defined in include/RealtimePlot.h:384
 < Active cursor selection tracking identifier context mode.
 
 ---
+
+{#m_activecursorref}
 
 ### m_activeCursorRef
 
@@ -1324,6 +1474,8 @@ Direct memory reference address to dragged object context instance.
 
 ---
 
+{#m_clicktolerancepixels}
+
 ### m_clickTolerancePixels
 
 ```cpp
@@ -1336,6 +1488,8 @@ Defined in include/RealtimePlot.h:387
 Click bounding halo tolerance scope diameter context scale.
 
 ---
+
+{#m_legend}
 
 ### m_legend
 
@@ -1364,6 +1518,8 @@ Secondary render presentation layer mapping data streams to labels.
 
 ---
 
+{#pixeltodata}
+
 ### pixelToData
 
 `const`
@@ -1386,6 +1542,8 @@ Real calculated QPointF coordinate structure floating points.
 | `px` | `QPoint` | Integer position relative to the local widget frame coordinate map. |
 
 ---
+
+{#datatopixel}
 
 ### dataToPixel
 
@@ -1411,6 +1569,8 @@ QPoint mapping position in widget screen coordinate pixel space.
 
 ---
 
+{#plotarea}
+
 ### plotArea
 
 `const`
@@ -1428,6 +1588,8 @@ Screen coordinate integer geometry box wrapper.
 
 ---
 
+{#drawgrid}
+
 ### drawGrid
 
 ```cpp
@@ -1437,6 +1599,8 @@ void drawGrid(const QRect & area, const QVector< PlotAxis::Tick > & xTicks, cons
 Defined in include/RealtimePlot.h:303
 
 ---
+
+{#drawseries}
 
 ### drawSeries
 
@@ -1448,6 +1612,8 @@ Defined in include/RealtimePlot.h:305
 
 ---
 
+{#drawaxes}
+
 ### drawAxes
 
 ```cpp
@@ -1457,6 +1623,8 @@ void drawAxes(const QRect & area, const QVector< PlotAxis::Tick > & xTicks, cons
 Defined in include/RealtimePlot.h:306
 
 ---
+
+{#drawlinestrip}
 
 ### drawLineStrip
 
@@ -1468,6 +1636,8 @@ Defined in include/RealtimePlot.h:310
 
 ---
 
+{#drawlines}
+
 ### drawLines
 
 ```cpp
@@ -1478,6 +1648,8 @@ Defined in include/RealtimePlot.h:312
 
 ---
 
+{#applyzoom}
+
 ### applyZoom
 
 ```cpp
@@ -1487,6 +1659,8 @@ void applyZoom(double factor, QPoint anchor)
 Defined in include/RealtimePlot.h:314
 
 ---
+
+{#emitviewchanged}
 
 ### emitViewChanged
 
@@ -1503,6 +1677,8 @@ Defined in include/RealtimePlot.h:315
 | `const std::vector< QColor >` | [`colorList`](#colorlist) `static` | Palette definition array used to automate color assignment layers. |
 
 ---
+
+{#colorlist}
 
 ### colorList
 

@@ -1,4 +1,4 @@
-
+{#plotseries}
 
 # PlotSeries
 
@@ -82,6 +82,8 @@ Stores (x, y) coordinate pairs with support for multi-level Level of Detail (LOD
 
 ---
 
+{#realtimeplot}
+
 ### RealtimePlot
 
 ```cpp
@@ -120,6 +122,8 @@ Defined in include/PlotSeries.h:26
 
 ---
 
+{#plotseries-1}
+
 ### PlotSeries
 
 `explicit`
@@ -140,6 +144,8 @@ Constructs the plot data series.
 | `color` | `QColor` | Color used to render the series by default (Default: Qt::cyan). |
 
 ---
+
+{#pushpoint}
 
 ### pushPoint
 
@@ -165,6 +171,8 @@ This method is thread-safe.
 
 ---
 
+{#pushpoint-1}
+
 ### pushPoint
 
 ```cpp
@@ -188,6 +196,8 @@ This method is thread-safe.
 
 ---
 
+{#clear}
+
 ### clear
 
 ```cpp
@@ -205,6 +215,8 @@ This method is thread-safe.
 
 ---
 
+{#lock}
+
 ### lock
 
 `const`
@@ -221,6 +233,8 @@ Acquires the internal mutex lock for external safe operations.
 A std::unique_lock object managing the instance's mutex.
 
 ---
+
+{#points}
 
 ### points
 
@@ -244,6 +258,8 @@ Constant reference to the underlying std::vector of raw points.
 
 ---
 
+{#name}
+
 ### name
 
 `const` `inline`
@@ -259,6 +275,8 @@ The current name of the series.
 
 ---
 
+{#color}
+
 ### color
 
 `const` `inline`
@@ -273,6 +291,8 @@ Defined in include/PlotSeries.h:125
 The color assigned to this series.
 
 ---
+
+{#setcolor}
 
 ### setColor
 
@@ -292,6 +312,8 @@ Defined in include/PlotSeries.h:128
 
 ---
 
+{#setname}
+
 ### setName
 
 `inline`
@@ -310,6 +332,8 @@ Defined in include/PlotSeries.h:131
 
 ---
 
+{#visible}
+
 ### visible
 
 `const` `inline`
@@ -324,6 +348,8 @@ Defined in include/PlotSeries.h:134
 True if the series is currently configured to be visible.
 
 ---
+
+{#setvisible}
 
 ### setVisible
 
@@ -343,6 +369,8 @@ Defined in include/PlotSeries.h:137
 
 ---
 
+{#linewidth}
+
 ### lineWidth
 
 `const` `inline`
@@ -357,6 +385,8 @@ Defined in include/PlotSeries.h:140
 Line width in pixels.
 
 ---
+
+{#setlinewidth}
 
 ### setLineWidth
 
@@ -376,6 +406,8 @@ Defined in include/PlotSeries.h:143
 
 ---
 
+{#xmin}
+
 ### xMin
 
 `const` `inline`
@@ -390,6 +422,8 @@ Defined in include/PlotSeries.h:148
 Current minimum absolute value along the X-axis.
 
 ---
+
+{#xmax}
 
 ### xMax
 
@@ -406,6 +440,8 @@ Current maximum absolute value along the X-axis.
 
 ---
 
+{#ymin}
+
 ### yMin
 
 `const` `inline`
@@ -421,6 +457,8 @@ Current minimum absolute value along the Y-axis.
 
 ---
 
+{#ymax}
+
 ### yMax
 
 `const` `inline`
@@ -435,6 +473,8 @@ Defined in include/PlotSeries.h:154
 Current maximum absolute value along the Y-axis.
 
 ---
+
+{#getvisiblepoints}
 
 ### getVisiblePoints
 
@@ -461,6 +501,8 @@ Reference to an internal vector containing ready-to-render points.
 
 ---
 
+{#getdatapoints}
+
 ### getDataPoints
 
 `inline`
@@ -484,6 +526,8 @@ Reference to the selected LOD tier point vector.
 
 ---
 
+{#size}
+
 ### size
 
 `inline`
@@ -498,6 +542,8 @@ Defined in include/PlotSeries.h:181
 Total number of entries in the main series buffer.
 
 ---
+
+{#getclosestpointtox}
 
 ### getClosestPointToX
 
@@ -519,6 +565,8 @@ The [Point](PlotSeries-Point.md#point) structure sitting closest to the searched
 | `xValue` | `double` | Reference lookup value along the X-axis. |
 
 ---
+
+{#calculateintervalstats}
 
 ### calculateIntervalStats
 
@@ -563,6 +611,8 @@ An [IntervalStats](PlotSeries-IntervalStats.md#intervalstats) structure populate
 
 ---
 
+{#m_mutex}
+
 ### m_mutex
 
 ```cpp
@@ -574,6 +624,8 @@ Defined in include/PlotSeries.h:227
 Mutex to ensure mutual exclusion across multi-threaded operations.
 
 ---
+
+{#m_points}
 
 ### m_points
 
@@ -587,6 +639,8 @@ Primary storage containing raw signal data.
 
 ---
 
+{#m_visiblebuffer}
+
 ### m_visibleBuffer
 
 ```cpp
@@ -598,6 +652,8 @@ Defined in include/PlotSeries.h:231
 Scratchpad buffer used for exchanging and filtering displayable points.
 
 ---
+
+{#m_lodlevels}
 
 ### m_lodLevels
 
@@ -611,6 +667,8 @@ Dynamic array holding discrete LOD data structures.
 
 ---
 
+{#m_name}
+
 ### m_name
 
 ```cpp
@@ -623,6 +681,8 @@ Name identifier of the series.
 
 ---
 
+{#m_color-1}
+
 ### m_color
 
 ```cpp
@@ -634,6 +694,8 @@ Defined in include/PlotSeries.h:246
 Rendering color profile.
 
 ---
+
+{#m_visible}
 
 ### m_visible
 
@@ -648,6 +710,8 @@ Control flag to skip or commit execution of the render pipeline.
 
 ---
 
+{#m_linewidth}
+
 ### m_lineWidth
 
 ```cpp
@@ -660,6 +724,8 @@ Defined in include/PlotSeries.h:249
 Line thickness configuration for rasterized rendering commands.
 
 ---
+
+{#m_xmin}
 
 ### m_xMin
 
@@ -674,6 +740,8 @@ Cached absolute minimum X boundary.
 
 ---
 
+{#m_xmax}
+
 ### m_xMax
 
 ```cpp
@@ -686,6 +754,8 @@ Defined in include/PlotSeries.h:254
 Cached absolute maximum X boundary.
 
 ---
+
+{#m_ymin}
 
 ### m_yMin
 
@@ -700,6 +770,8 @@ Cached absolute minimum Y boundary.
 
 ---
 
+{#m_ymax}
+
 ### m_yMax
 
 ```cpp
@@ -712,6 +784,8 @@ Defined in include/PlotSeries.h:258
 Cached absolute maximum Y boundary.
 
 ---
+
+{#m_vbo}
 
 ### m_vbo
 
@@ -727,6 +801,8 @@ Qt abstraction wrapper for the Vertex Buffer Object.
 
 ---
 
+{#m_vao}
+
 ### m_vao
 
 ```cpp
@@ -738,6 +814,8 @@ Defined in include/PlotSeries.h:265
 Qt abstraction wrapper for the Vertex Array Object.
 
 ---
+
+{#m_glinitialized}
 
 ### m_glInitialized
 
@@ -751,6 +829,8 @@ Defined in include/PlotSeries.h:266
 Confirms whether initGLBuffers was run successfully.
 
 ---
+
+{#m_pointsingpu}
 
 ### m_pointsInGPU
 
@@ -781,6 +861,8 @@ Total count of vertices currently allocated on VRAM.
 
 ---
 
+{#updatebounds}
+
 ### updateBounds
 
 ```cpp
@@ -799,6 +881,8 @@ Dynamically expands the current bounding box metrics to encompass a new point.
 
 ---
 
+{#recomputebounds}
+
 ### recomputeBounds
 
 ```cpp
@@ -811,6 +895,8 @@ Linearly recomputes absolute boundaries (mins and maxes) by scanning the entire 
 
 ---
 
+{#updatelodlevels}
+
 ### updateLodLevels
 
 ```cpp
@@ -822,6 +908,8 @@ Defined in include/PlotSeries.h:243
 Increments or completely updates the LOD data arrays using newly injected points.
 
 ---
+
+{#initglbuffers}
 
 ### initGLBuffers
 
@@ -840,6 +928,8 @@ Must be called from the thread that owns the OpenGL context (Render Thread).
 
 ---
 
+{#destroyglbuffers}
+
 ### destroyGLBuffers
 
 ```cpp
@@ -852,6 +942,8 @@ Releases and destroys the OpenGL buffers linked to this series.
 
 ---
 
+{#updatevbo}
+
 ### updateVBO
 
 ```cpp
@@ -863,6 +955,8 @@ Defined in include/PlotSeries.h:287
 Updates the Vertex Buffer Object (VBO) content with current RAM data.
 
 ---
+
+{#vao}
 
 ### vao
 
@@ -881,6 +975,8 @@ Pointer to the QOpenGLVertexArrayObject instance.
 
 ---
 
+{#vertexcount}
+
 ### vertexCount
 
 `const` `inline`
@@ -895,6 +991,8 @@ Defined in include/PlotSeries.h:296
 Total vertex count currently stored in RAM.
 
 ---
+
+{#vbo}
 
 ### vbo
 
@@ -913,6 +1011,8 @@ Reference to the VertexBuffer-type QOpenGLBuffer.
 
 ---
 
+{#syncwithgpu}
+
 ### syncWithGPU
 
 ```cpp
@@ -924,6 +1024,8 @@ Defined in include/PlotSeries.h:307
 Synchronizes CPU memory data over to the GPU efficiently.
 
 ---
+
+{#uploadvisiblepoints}
 
 ### uploadVisiblePoints
 

@@ -1,4 +1,4 @@
-
+{#intervalstats}
 
 # IntervalStats
 
@@ -38,6 +38,8 @@ Statistical metrics calculated over a specific chart window.
 
 ---
 
+{#min-1}
+
 ### min
 
 ```cpp
@@ -50,6 +52,8 @@ Defined in include/PlotSeries.h:62
 Minimum value in the interval.
 
 ---
+
+{#max-1}
 
 ### max
 
@@ -64,6 +68,8 @@ Maximum value in the interval.
 
 ---
 
+{#mean}
+
 ### mean
 
 ```cpp
@@ -75,6 +81,8 @@ Defined in include/PlotSeries.h:66
 Mean (average) value in the interval.
 
 ---
+
+{#rms}
 
 ### rms
 
@@ -88,6 +96,8 @@ Root Mean Square (RMS) value in the interval.
 
 ---
 
+{#numsamples}
+
 ### numSamples
 
 ```cpp
@@ -100,6 +110,8 @@ Defined in include/PlotSeries.h:68
 Total number of samples contained in the interval.
 
 ---
+
+{#timediff}
 
 ### timeDiff
 
