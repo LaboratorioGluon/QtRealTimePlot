@@ -110,44 +110,6 @@ void PlotSeries::destroyGLBuffers()
     m_glInitialized = false;
 }
 
-// Sube el std::vector entero a la GPU de golpe
-void PlotSeries::updateVBO()
-{
-    /*std::lock_guard<std::mutex> lg(m_mutex);
-    if (m_points.empty() || !m_glInitialized)
-        return;
-
-    m_vbo.bind();
-    // glBufferData nativo a través del wrapper de Qt:
-    m_vbo.allocate(m_points.data(), static_cast<int>(m_points.size() * sizeof(Point)));
-    m_vbo.release();*/
-}
-
-void PlotSeries::syncWithGPU()
-{
-    std::lock_guard<std::mutex> lg(m_mutex);
-
-    if (!m_glInitialized || m_points.empty())
-        return;
-    if (m_points.size() == m_pointsInGPU)
-        return;
-
-    size_t newPointsCount = m_points.size() - m_pointsInGPU;
-
-    m_vbo.bind();
-
-    int offsetBytes = static_cast<int>(m_pointsInGPU * sizeof(Point));
-    int sizeBytes   = static_cast<int>(newPointsCount * sizeof(Point));
-
-    const Point* dataPtr = &m_points[m_pointsInGPU];
-
-    m_vbo.write(offsetBytes, dataPtr, sizeBytes);
-
-    m_vbo.release();
-
-    m_pointsInGPU = m_points.size();
-}
-
 std::vector<PlotSeries::Point>& PlotSeries::getVisiblePoints(double xMin,
                                                              double xMax,
                                                              int    targetWidth)

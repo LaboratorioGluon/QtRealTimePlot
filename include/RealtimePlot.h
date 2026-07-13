@@ -140,14 +140,19 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
 
     /**
      * @brief Add cursor in the the center of the current view.
+     * 
+     * @param style type of cursor to add.
      */
-    void addCursor();
+    void addCursor(
+        RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE);
 
     /**
      * @brief Add cursor in position.
      * @param xPos Position in data coordinates to place the cursor
+     * @param style type of cursor to add.
      */
-    void addCursor(double xPos);
+    void addCursor(double xPos, RtpCursor::MarkerStyle style =
+                                    RtpCursor::MarkerStyle::MARKER_SIMPLE);
 
     void setRangeCursorEnable(bool enable) { m_cursorRange.enable(enable); }
     void setRangeCursorPos(double start, double end)

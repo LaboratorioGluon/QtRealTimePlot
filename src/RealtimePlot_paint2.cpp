@@ -431,17 +431,15 @@ void RealtimePlot::drawLines(const std::vector<float>& verts, QColor color,
     m_shader->release();
 }
 
-void RealtimePlot::addCursor()
+void RealtimePlot::addCursor(RtpCursor::MarkerStyle style)
 {
     double position = (m_xMax - m_xMin) / 2;
-    addCursor(position);
+    addCursor(position, style);
 }
 
-void RealtimePlot::addCursor(double xPos)
+void RealtimePlot::addCursor(double xPos, RtpCursor::MarkerStyle style)
 {
-
-    m_cursors.push_back(RtpCursor(m_cursors.size(), Qt::green,
-                                  RtpCursor::MarkerStyle::MARKER_SIMPLE));
+    m_cursors.push_back(RtpCursor(m_cursors.size(), Qt::green, style));
     m_cursors[m_cursors.size() - 1].setSeriesSource(&m_series);
     m_cursors[m_cursors.size() - 1].setPos(xPos);
 }

@@ -8,7 +8,7 @@ BUILDDIR      = build
 
 doc:
 	rm -rf doc_out
-	rm -rf doc
+	rm -rf doc/*
 	mkdir -p doc
 	doxygen configs/Doxyfile.in
 	moxygen -c  -a -o doc/%s.md doc_out/xml/

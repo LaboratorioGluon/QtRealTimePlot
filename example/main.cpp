@@ -118,6 +118,7 @@ class MainWindow : public QMainWindow
 
         auto* btnGrid           = new QPushButton("Grid", this);
         auto* btnNewCursor      = new QPushButton("AddCursor", this);
+        auto* btnNewCursorFull  = new QPushButton("AddCursorFull", this);
         auto* btnAddRangeCursor = new QPushButton("AddRangeCursor", this);
 
         auto* lblHelp = new QLabel(
@@ -132,6 +133,7 @@ class MainWindow : public QMainWindow
         hlay->addWidget(btnFit);
         hlay->addWidget(btnGrid);
         hlay->addWidget(btnNewCursor);
+        hlay->addWidget(btnNewCursorFull);
         hlay->addWidget(btnAddRangeCursor);
         hlay->addStretch();
         hlay->addWidget(lblHelp);
@@ -143,6 +145,9 @@ class MainWindow : public QMainWindow
 
         connect(btnNewCursor, &QPushButton::clicked, this,
                 [this]() { this->m_plot->addCursor(); });
+        connect(btnNewCursorFull, &QPushButton::clicked, this, [this]() {
+            this->m_plot->addCursor(RtpCursor::MarkerStyle::MARKER_FULL);
+        });
         connect(btnAddRangeCursor, &QPushButton::clicked, this,
                 [this]() { this->m_plot->setRangeCursorEnable(true); });
 

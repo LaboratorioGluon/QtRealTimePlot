@@ -4,6 +4,9 @@ A lightweight, header-small C++ library for high-rate data plotting inside a
 Qt application. Uses OpenGL for fast line rendering with a QPainter overlay
 for text, legend, and interactive selection.
 
+>[!IMPORTANT]
+> I am writtin a blog post in [Laboratorio Gluon Blog](https://en.laboratoriogluon.com/blog/qtrealtimeplot-intro) 
+
 ---
 
 ## Features
@@ -21,6 +24,10 @@ for text, legend, and interactive selection.
 | **Legend** | Floating overlay, auto-sized to visible series |
 
 ---
+
+## Example
+
+![Image of the demo application](doc/images/example.png)
 
 ## Quick start
 

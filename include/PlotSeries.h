@@ -282,11 +282,6 @@ class PlotSeries : protected QOpenGLFunctions
     void destroyGLBuffers();
 
     /**
-     * @brief Updates the Vertex Buffer Object (VBO) content with current RAM data.
-     */
-    void updateVBO();
-
-    /**
      * @brief Gets the Vertex Array Object managed by this series.
      * @return Pointer to the QOpenGLVertexArrayObject instance.
      */
@@ -300,11 +295,6 @@ class PlotSeries : protected QOpenGLFunctions
      * @return Reference to the VertexBuffer-type QOpenGLBuffer.
      */
     QOpenGLBuffer& vbo() { return m_vbo; }
-
-    /**
-     * @brief Synchronizes CPU memory data over to the GPU efficiently.
-     */
-    void syncWithGPU();
 
     /**
      * @brief Uploads an external buffer of pre-filtered visible points straight to the GPU VBO.
