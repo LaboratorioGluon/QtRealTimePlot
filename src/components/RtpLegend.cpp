@@ -47,7 +47,7 @@ void RtpLegend::draw(QPainter& painter, const QRect& plotRect)
             maxTextWidth = textW;
     }
 
-    int boxWidth  = (m_padding * 2) + indicatorSize + 6 + maxTextWidth;
+    int boxWidth  = (m_padding * 2) + indicatorSize + 6 + maxTextWidth + 4;
     int boxHeight = (m_padding * 2) + (m_seriesRef->size() * lineHeight) +
                     ((m_seriesRef->size() - 1) * 2);
 
@@ -87,7 +87,7 @@ void RtpLegend::draw(QPainter& painter, const QRect& plotRect)
         }
         painter.setPen(textCol);
 
-        QRect textRect(currentX + indicatorSize + 6, currentY, maxTextWidth,
+        QRect textRect(currentX + indicatorSize + 6, currentY, maxTextWidth + 4,
                        lineHeight);
         painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter,
                          serie->name());

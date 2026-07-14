@@ -97,6 +97,15 @@ void RealtimePlot::removeSeries(const std::shared_ptr<PlotSeries>& series)
                    m_series.end());
 }
 
+void RealtimePlot::clearSeriesData()
+{
+    for (auto& s : m_series)
+    {
+
+        s->clear();
+    }
+}
+
 void RealtimePlot::clearSeries()
 {
     m_series.clear();
@@ -117,6 +126,38 @@ void RealtimePlot::setViewRange(double xMin, double xMax, double yMin,
 QRectF RealtimePlot::viewRange() const
 {
     return QRectF(m_xMin, m_yMin, m_xMax - m_xMin, m_yMax - m_yMin);
+}
+
+void RealtimePlot::autoFitRolling()
+{
+    double xMin = 1e300, xMax = -1e300;
+    double yMin = 1e300, yMax = -1e300;
+    bool   any = false;
+
+    for (const auto& s : m_series)
+    {
+        if (!s->visible() || s->points().empty())
+            continue;
+        auto lk = s->lock();
+        xMin    = std::min(xMin, s->xMin());
+        xMax    = std::max(xMax, s->xMax());
+        yMin    = std::min(yMin, s->yMin());
+        yMax    = std::max(yMax, s->yMax());
+        any     = true;
+    }
+
+    if (!any)
+        return;
+
+    // 5 % padding on each side
+    double dx = (xMax - m_zoomWindow) * 0.01;
+    double dy = (yMax - yMin) * 0.05;
+    if (dx == 0)
+        dx = 0.5;
+    if (dy == 0)
+        dy = 0.5;
+
+    setViewRange(xMax - m_zoomWindow - dx, xMax + dx, yMin - dy, yMax + dy);
 }
 
 void RealtimePlot::autoFit()

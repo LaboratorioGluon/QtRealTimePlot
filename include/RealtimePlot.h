@@ -136,6 +136,11 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      */
     void clearSeries();
 
+    /**
+     * @brief Clear the series data but not the series themselves
+     */
+    void clearSeriesData();
+
     // ------------------------------------------------------------------ cursors
 
     /**
@@ -167,6 +172,7 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      * @brief Computes data boundaries and updates viewport range parameters to fit content.
      */
     void autoFit();
+    void autoFitRolling();
 
     /**
      * @brief Explicitly overrides limits of the observable data window.
@@ -253,8 +259,15 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
     /** @param v Toggles visibility of the interactive serial descriptor panel. */
     void setLegendVisible(bool v) { m_legendVisible = v; }
 
-    /** @param a Sets whether auto-zoom evaluation passes execute automatically. */
-    void setAutoZoom(bool a) { m_zoomAuto = a; }
+    /** @param a Sets whether auto-zoom evaluation passes execute automatically.
+     * @param window If different from 0, this defines the rolling window width
+     */
+    void setAutoZoom(bool a, uint32_t window = 0)
+    {
+        m_zoomAuto   = a;
+        m_zoomWindow = window;
+    }
+    bool autoZoom() const { return m_zoomAuto; }
 
    signals:
     /**
@@ -265,6 +278,8 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      * @param yMax New absolute high limit parameter on Y domain.
      */
     void viewChanged(double xMin, double xMax, double yMin, double yMax);
+
+    void visibilityChanged();
 
    protected:
     // --- Qt OpenGL Interface Overrides ---
@@ -359,6 +374,7 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
         XY; /**< Positional scaling locking parameter selection profile. */
     bool m_zoomAuto =
         true; /**< Automation tracking configuration state override directive. */
+    uint32_t m_zoomWindow = 0;
 
     // --- Interaction ---
     bool m_panning =

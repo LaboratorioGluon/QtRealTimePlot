@@ -85,7 +85,14 @@ void RealtimePlot::paintGL()
 
     if (m_zoomAuto)
     {
-        autoFit();
+        if (m_zoomWindow == 0)
+        {
+            autoFit();
+        }
+        else
+        {
+            autoFitRolling();
+        }
     }
     // Auto-init view on first paint
     if (!m_viewInitialized)

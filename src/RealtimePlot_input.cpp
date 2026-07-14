@@ -92,7 +92,7 @@ void RealtimePlot::mousePressEvent(QMouseEvent* event)
         {
             bool newVisibility = !m_series[clickedIndex]->visible();
             m_series[clickedIndex]->setVisible(newVisibility);
-
+            emit visibilityChanged();
             update();  // Forzar repintado
             event->accept();
             return;
@@ -234,6 +234,24 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent* event)
                 event->accept();
                 return;
             }
+        }
+
+        QRect rectArea = plotArea();
+        if (pos.x() >= rectArea.left() && pos.x() <= rectArea.right() &&
+            pos.y() > rectArea.bottom())
+        {
+
+            setCursor(Qt::SizeHorCursor);
+            event->accept();
+            return;
+        }
+        else if (pos.x() < rectArea.left() && pos.y() >= rectArea.top() &&
+                 pos.y() <= rectArea.bottom())
+        {
+
+            setCursor(Qt::SizeVerCursor);
+            event->accept();
+            return;
         }
     }
 
