@@ -14,14 +14,9 @@
 static const char* kVertSrc = R"GLSL(
     attribute vec2 a_position;
     uniform   vec2 u_viewport;   // (width, height) in pixels
-    uniform   vec4 u_plot_limits;// (xmin, xMax, yMin, yMax)
     uniform   vec4 u_margins;     // (left, right, top, bottom) 
     void main() {
 
-        float xMin = u_plot_limits.x;
-        float xMax = u_plot_limits.y;
-        float yMin = u_plot_limits.z;
-        float yMax = u_plot_limits.w;
 
         float mLeft   = u_margins.x;
         float mRight  = u_margins.y;
@@ -31,8 +26,8 @@ static const char* kVertSrc = R"GLSL(
         float plotWidth  = u_viewport.x - mLeft - mRight;
         float plotHeight = u_viewport.y - mTop - mBottom;
 
-        float pixelX = mLeft + ((a_position.x - xMin) / (xMax - xMin)) * plotWidth;
-        float pixelY = mTop + (1.0 - (a_position.y - yMin) / (yMax - yMin)) * plotHeight;
+        float pixelX = mLeft + a_position.x * plotWidth;
+        float pixelY = mTop + (1.0 - a_position.y) * plotHeight;
 
         float ndcX =  (pixelX / u_viewport.x) * 2.0 - 1.0;
         float ndcY = -((pixelY / u_viewport.y) * 2.0 - 1.0);
@@ -104,9 +99,9 @@ void RealtimePlot::paintGL()
     // Compute ticks once per frame
     QRect area = plotArea();
     auto  xTicks =
-        PlotAxis::computeTicks(m_xMin, m_xMax, std::max(3, area.width() / 80));
-    auto yTicks =
-        PlotAxis::computeTicks(m_yMin, m_yMax, std::max(3, area.height() / 50));
+        PlotAxis::computeTicks(m_xMin, m_xMax, std::max(10, area.width() / 80));
+    auto yTicks = PlotAxis::computeTicks(m_yMin, m_yMax,
+                                         std::max(10, area.height() / 50));
 
     int fontSize = 12;
     m_tickFont.setPointSize(fontSize);
@@ -234,6 +229,7 @@ void RealtimePlot::paintGL()
 // ==========================================================================
 //  Grid
 // ==========================================================================
+#include <stdio.h>
 void RealtimePlot::drawGrid(const QRect&                   area,
                             const QVector<PlotAxis::Tick>& xTicks,
                             const QVector<PlotAxis::Tick>& yTicks)
@@ -243,25 +239,34 @@ void RealtimePlot::drawGrid(const QRect&                   area,
 
     const float dpr = static_cast<float>(devicePixelRatioF());
 
+    double xRange = m_xMax - m_xMin;
+    double yRange = m_yMax - m_yMin;
+    if (xRange <= 0.0 || yRange <= 0.0)
+        return;
+
     std::vector<float> verts;
     verts.reserve((xTicks.size() + yTicks.size()) * 4);
 
+    // Normalizamos cada tick de X de 0.0 a 1.0 antes de meterlo al vector
     for (const auto& t : xTicks)
     {
-        verts.push_back((float)t.value);
-        verts.push_back((float)m_yMin);
-        verts.push_back((float)t.value);
-        verts.push_back((float)m_yMax);
-    }
-    for (const auto& t : yTicks)
-    {
-        verts.push_back((float)m_xMin);
-        verts.push_back((float)t.value);
-        verts.push_back((float)m_xMax);
-        verts.push_back((float)t.value);
+        float xNorm = static_cast<float>((t.value - m_xMin) / xRange);
+        verts.push_back(xNorm);
+        verts.push_back(0.0f);  // yMin normalizado es 0.0
+        verts.push_back(xNorm);
+        verts.push_back(1.0f);  // yMax normalizado es 1.0
     }
 
-    // Grid lines are line SEGMENTS, not a strip; draw as GL_LINES
+    // Normalizamos cada tick de Y de 0.0 a 1.0
+    for (const auto& t : yTicks)
+    {
+        float yNorm = static_cast<float>((t.value - m_yMin) / yRange);
+        verts.push_back(0.0f);  // xMin normalizado es 0.0
+        verts.push_back(yNorm);
+        verts.push_back(1.0f);  // xMax normalizado es 1.0
+        verts.push_back(yNorm);
+    }
+
     drawLines(verts, m_grid.color, 1.0f * dpr);
 }
 
@@ -284,13 +289,14 @@ void RealtimePlot::drawSeries(const QRect& area)
 
     m_shader->setUniformValue("u_viewport", (float)width() * dpr,
                               (float)height() * dpr);
-    m_shader->setUniformValue("u_plot_limits", (float)m_xMin, (float)m_xMax,
-                              (float)m_yMin, (float)m_yMax);
     m_shader->setUniformValue(
         "u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
         (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
 
     int loc = m_shader->attributeLocation("a_position");
+
+    double xRange = m_xMax - m_xMin;
+    double yRange = m_yMax - m_yMin;
 
     for (const auto& s : m_series)
     {
@@ -305,7 +311,19 @@ void RealtimePlot::drawSeries(const QRect& area)
         if (visiblePts.size() < 2)
             continue;
 
-        s->uploadVisiblePoints(visiblePts);
+        std::vector<PlotSeries::NormalizedPoint> normPts;
+        normPts.reserve(visiblePts.size());
+
+        // Normalize the visible points to float.
+        for (const auto& pt : visiblePts)
+        {
+            double xn = (xRange > 0.0) ? (pt.x - m_xMin) / xRange : 0.0;
+            double yn = (yRange > 0.0) ? (pt.y - m_yMin) / yRange : 0.0;
+
+            normPts.push_back({static_cast<float>(xn), static_cast<float>(yn)});
+        }
+
+        s->uploadVisiblePoints(normPts);
 
         m_shader->setUniformValue(
             "u_color", (float)s->color().redF(), (float)s->color().greenF(),
@@ -316,10 +334,10 @@ void RealtimePlot::drawSeries(const QRect& area)
         s->vbo().bind();
 
         glEnableVertexAttribArray(loc);
-        glVertexAttribPointer(loc, 2, GL_DOUBLE, GL_FALSE,
-                              sizeof(PlotSeries::Point), nullptr);
+        glVertexAttribPointer(loc, 2, GL_FLOAT, GL_FALSE,
+                              sizeof(PlotSeries::NormalizedPoint), nullptr);
 
-        glDrawArrays(GL_LINE_STRIP, 0, static_cast<GLsizei>(visiblePts.size()));
+        glDrawArrays(GL_LINE_STRIP, 0, static_cast<GLsizei>(normPts.size()));
 
         s->vao()->release();
         s->vbo().release();
@@ -339,34 +357,42 @@ void RealtimePlot::drawAxes(const QRect&                   area,
 
     const float dpr = static_cast<float>(devicePixelRatioF());
 
-    // Plot border
-    std::vector<float> border = {(float)m_xMin, (float)m_yMax, (float)m_xMax,
-                                 (float)m_yMax, (float)m_xMax, (float)m_yMin,
-                                 (float)m_xMin, (float)m_yMin, (float)m_xMin,
-                                 (float)m_yMax};
+    double xRange = m_xMax - m_xMin;
+    double yRange = m_yMax - m_yMin;
+    if (xRange <= 0.0 || yRange <= 0.0)
+        return;
+
+    std::vector<float> border = {
+        0.0f, 1.0f,  // Top-Left
+        1.0f, 1.0f,  // Top-Right
+        1.0f, 0.0f,  // Bottom-Right
+        0.0f, 0.0f,  // Bottom-Left
+        0.0f, 1.0f   // Cierra en Top-Left
+    };
     drawLineStrip(border, m_axisColor, 1.5f * dpr);
 
-    // Tick marks as line segments
     std::vector<float> ticks;
 
-    double xTickSize =
-        (m_xMax - m_xMin) / (area.width() > 0 ? area.width() : 1) * 5.0;
-    double yTickSize =
-        (m_yMax - m_yMin) / (area.height() > 0 ? area.height() : 1) * 5.0;
+    float xTickSizeNorm = (area.width() > 0) ? 5.0f / area.width() : 0.01f;
+    float yTickSizeNorm = (area.height() > 0) ? 5.0f / area.height() : 0.01f;
 
     for (const auto& t : xTicks)
     {
-        ticks.push_back((float)t.value);
-        ticks.push_back((float)m_yMin);
-        ticks.push_back((float)t.value);
-        ticks.push_back((float)(m_yMin - yTickSize));
+        float xNorm = static_cast<float>((t.value - m_xMin) / xRange);
+        ticks.push_back(xNorm);
+        ticks.push_back(0.0f);
+        ticks.push_back(xNorm);
+        ticks.push_back(
+            -yTickSizeNorm);  // Se extiende un poco hacia abajo del borde inferior
     }
     for (const auto& t : yTicks)
     {
-        ticks.push_back((float)m_xMin);
-        ticks.push_back((float)t.value);
-        ticks.push_back((float)(m_xMin - xTickSize));
-        ticks.push_back((float)t.value);
+        float yNorm = static_cast<float>((t.value - m_yMin) / yRange);
+        ticks.push_back(0.0f);
+        ticks.push_back(yNorm);
+        ticks.push_back(
+            -xTickSizeNorm);  // Se extiende hacia la izquierda del borde izquierdo
+        ticks.push_back(yNorm);
     }
     drawLines(ticks, m_axisColor, 1.0f * dpr);
 }
@@ -387,8 +413,6 @@ void RealtimePlot::drawLineStrip(const std::vector<float>& verts, QColor color,
     m_shader->setUniformValue("u_color", (float)color.redF(),
                               (float)color.greenF(), (float)color.blueF(),
                               (float)color.alphaF());
-    m_shader->setUniformValue("u_plot_limits", (float)m_xMin, (float)m_xMax,
-                              (float)m_yMin, (float)m_yMax);
     m_shader->setUniformValue(
         "u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
         (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
@@ -421,8 +445,6 @@ void RealtimePlot::drawLines(const std::vector<float>& verts, QColor color,
     m_shader->setUniformValue("u_color", (float)color.redF(),
                               (float)color.greenF(), (float)color.blueF(),
                               (float)color.alphaF());
-    m_shader->setUniformValue("u_plot_limits", (float)m_xMin, (float)m_xMax,
-                              (float)m_yMin, (float)m_yMax);
     m_shader->setUniformValue(
         "u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
         (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);

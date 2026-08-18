@@ -90,14 +90,18 @@ void PlotSeries::initGLBuffers()
     m_glInitialized = true;
 }
 
-void PlotSeries::uploadVisiblePoints(const std::vector<Point>& visiblePts)
+void PlotSeries::uploadVisiblePoints(
+    const std::vector<NormalizedPoint>& visiblePts)
 {
     if (!m_glInitialized || visiblePts.empty())
         return;
 
+    qDebug() << "Uploading : " << visiblePts.size();
+
     m_vbo.bind();
-    m_vbo.allocate(visiblePts.data(),
-                   static_cast<int>(visiblePts.size() * sizeof(Point)));
+    m_vbo.allocate(
+        visiblePts.data(),
+        static_cast<int>(visiblePts.size() * sizeof(NormalizedPoint)));
     m_vbo.release();
 }
 
@@ -120,7 +124,7 @@ std::vector<PlotSeries::Point>& PlotSeries::getVisiblePoints(double xMin,
     if (m_points.empty() || targetWidth <= 0)
         return m_visibleBuffer;
 
-    const_cast<PlotSeries*>(this)->updateLodLevels();
+    //const_cast<PlotSeries*>(this)->updateLodLevels();
 
     const auto& crudePoints = m_lodLevels[0].points;
     auto        itStartCrude =

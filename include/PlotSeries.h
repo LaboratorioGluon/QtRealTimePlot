@@ -35,6 +35,11 @@ class PlotSeries : protected QOpenGLFunctions
         double y; /**< Y-axis coordinate (signal value). */
     };
 
+    struct NormalizedPoint {
+        float x_norm;  //**< Rango [0.0, 1.0] */
+        float y_norm;  /**< Rango [0.0, 1.0] */
+    };
+
     /**
      * @struct BlockStats
      * @brief Accumulated statistics for a specific block of data.
@@ -300,5 +305,5 @@ class PlotSeries : protected QOpenGLFunctions
      * @brief Uploads an external buffer of pre-filtered visible points straight to the GPU VBO.
      * @param visiblePts Vector containing the pre-processed points to be written to VRAM.
      */
-    void uploadVisiblePoints(const std::vector<Point>& visiblePts);
+    void uploadVisiblePoints(const std::vector<NormalizedPoint>& visiblePts);
 };
