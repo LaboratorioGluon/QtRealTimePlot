@@ -26,8 +26,7 @@ class RtpLegend
      * @brief Sets the data source pointer containing the collection of plot series.
      * @param series Constant pointer to the std::vector containing shared pointers of PlotSeries.
      */
-    void setSeriesSource(
-        const std::vector<std::shared_ptr<PlotSeries>>* series);
+    void setSeriesSource(const std::vector<std::shared_ptr<PlotSeries>>* series);
 
     /**
      * @brief Configuration modifier to change the text label font settings.
@@ -77,13 +76,10 @@ class RtpLegend
     QRect lastRenderedRect() const { return m_lastRect; }
 
    private:
-    QFont
-        m_font; /**< Font specification asset mapping descriptor settings onto label outputs. */
-    QColor
-        m_bgColor; /**< Solid clear back-face channel color metrics profile map configuration. */
-    int m_padding; /**< Inner alignment border separation distance threshold scaled in screen pixels. */
-    QRect
-        m_lastRect; /**< Geometry box cache capturing metrics from the historical draw call operation. */
+    QFont  m_font;     /**< Font specification asset mapping descriptor settings onto label outputs. */
+    QColor m_bgColor;  /**< Solid clear back-face channel color metrics profile map configuration. */
+    int    m_padding;  /**< Inner alignment border separation distance threshold scaled in screen pixels. */
+    QRect  m_lastRect; /**< Geometry box cache capturing metrics from the historical draw call operation. */
 
     /** Reference to the Plot Series, usually configured from the RealTimePlot. */
     const std::vector<std::shared_ptr<PlotSeries>>* m_seriesRef = nullptr;

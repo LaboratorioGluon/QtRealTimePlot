@@ -16,14 +16,12 @@ void RealtimePlot::wheelEvent(QWheelEvent* event)
     ZoomMode modoOriginal = m_zoomMode;
     m_zoomAuto            = false;
 
-    if (pos.x() >= rectArea.left() && pos.x() <= rectArea.right() &&
-        pos.y() > rectArea.bottom())
+    if (pos.x() >= rectArea.left() && pos.x() <= rectArea.right() && pos.y() > rectArea.bottom())
     {
 
         m_zoomMode = ZoomMode::XOnly;
     }
-    else if (pos.x() < rectArea.left() && pos.y() >= rectArea.top() &&
-             pos.y() <= rectArea.bottom())
+    else if (pos.x() < rectArea.left() && pos.y() >= rectArea.top() && pos.y() <= rectArea.bottom())
     {
 
         m_zoomMode = ZoomMode::YOnly;
@@ -118,10 +116,9 @@ void RealtimePlot::mousePressEvent(QMouseEvent* event)
 
     if (m_cursorRange.enabled())
     {
-        int pxStart = dataToPixel(m_cursorRange.getPosStart(), m_yMin).x();
-        int pxEnd   = dataToPixel(m_cursorRange.getPosEnd(), m_yMin).x();
-        m_activeCursorRef =
-            m_cursorRange.mousePressEvent(event, pxStart, pxEnd);
+        int pxStart       = dataToPixel(m_cursorRange.getPosStart(), m_yMin).x();
+        int pxEnd         = dataToPixel(m_cursorRange.getPosEnd(), m_yMin).x();
+        m_activeCursorRef = m_cursorRange.mousePressEvent(event, pxStart, pxEnd);
     }
 
     if (m_activeCursor != CursorType::None)
@@ -237,16 +234,14 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent* event)
         }
 
         QRect rectArea = plotArea();
-        if (pos.x() >= rectArea.left() && pos.x() <= rectArea.right() &&
-            pos.y() > rectArea.bottom())
+        if (pos.x() >= rectArea.left() && pos.x() <= rectArea.right() && pos.y() > rectArea.bottom())
         {
 
             setCursor(Qt::SizeHorCursor);
             event->accept();
             return;
         }
-        else if (pos.x() < rectArea.left() && pos.y() >= rectArea.top() &&
-                 pos.y() <= rectArea.bottom())
+        else if (pos.x() < rectArea.left() && pos.y() >= rectArea.top() && pos.y() <= rectArea.bottom())
         {
 
             setCursor(Qt::SizeVerCursor);

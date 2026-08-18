@@ -52,11 +52,9 @@ class PlotSeries : protected QOpenGLFunctions
         double xEnd;   /**< Ending X value of this data block. */
         double min;    /**< Minimum Y value found within this block. */
         double max;    /**< Maximum Y value found within this block. */
-        double
-            sum; /**< Accumulated sum of Y values. Useful for fast mean calculation (mean = sum / count). */
-        double
-            sumSq; /**< Sum of squares of Y values. Useful for Root Mean Square (RMS) or standard deviation. */
-        size_t count; /**< Total number of samples processed in this block. */
+        double sum;    /**< Accumulated sum of Y values. Useful for fast mean calculation (mean = sum / count). */
+        double sumSq;  /**< Sum of squares of Y values. Useful for Root Mean Square (RMS) or standard deviation. */
+        size_t count;  /**< Total number of samples processed in this block. */
     };
 
     /**
@@ -64,16 +62,12 @@ class PlotSeries : protected QOpenGLFunctions
      * @brief Statistical metrics calculated over a specific chart window.
      */
     struct IntervalStats {
-        double min = std::numeric_limits<
-            double>::max(); /**< Minimum value in the interval. */
-        double max = -std::numeric_limits<
-            double>::max(); /**< Maximum value in the interval. */
-        double mean = 0.0;  /**< Mean (average) value in the interval. */
-        double rms  = 0.0; /**< Root Mean Square (RMS) value in the interval. */
-        int    numSamples =
-            0; /**< Total number of samples contained in the interval. */
-        double timeDiff =
-            0.0; /**< Time delta (X_max - X_min) of the analyzed interval. */
+        double min        = std::numeric_limits<double>::max();  /**< Minimum value in the interval. */
+        double max        = -std::numeric_limits<double>::max(); /**< Maximum value in the interval. */
+        double mean       = 0.0;                                 /**< Mean (average) value in the interval. */
+        double rms        = 0.0;                                 /**< Root Mean Square (RMS) value in the interval. */
+        int    numSamples = 0;   /**< Total number of samples contained in the interval. */
+        double timeDiff   = 0.0; /**< Time delta (X_max - X_min) of the analyzed interval. */
     };
 
     /**
@@ -169,18 +163,14 @@ class PlotSeries : protected QOpenGLFunctions
      * @param targetWidth Width in pixels of the drawing area on the screen.
      * @return Reference to an internal vector containing ready-to-render points.
      */
-    std::vector<PlotSeries::Point>& getVisiblePoints(double xMin, double xMax,
-                                                     int targetWidth);
+    std::vector<PlotSeries::Point>& getVisiblePoints(double xMin, double xMax, int targetWidth);
 
     /**
      * @brief Gets raw points stored in a specific Level of Detail (LOD) tier.
      * @param lod Index of the target LOD tier (defaults to 0, maximum resolution).
      * @return Reference to the selected LOD tier point vector.
      */
-    std::vector<PlotSeries::Point>& getDataPoints(uint32_t lod = 0)
-    {
-        return m_lodLevels[lod].points;
-    }
+    std::vector<PlotSeries::Point>& getDataPoints(uint32_t lod = 0) { return m_lodLevels[lod].points; }
 
     /** @return Total number of entries in the main series buffer. */
     int size() { return m_points.size(); }
@@ -209,12 +199,9 @@ class PlotSeries : protected QOpenGLFunctions
      * rendering when viewing large time windows.
      */
     struct LodLevel {
-        std::vector<Point>
-            points; /**< Decimated points corresponding to this LOD level. */
-        std::vector<BlockStats>
-               stats; /**< Statistics of the blocks that make up this level. */
-        size_t lastProcessedCrudeSize =
-            0; /**< Amount of raw elements already processed for this level. */
+        std::vector<Point>      points;    /**< Decimated points corresponding to this LOD level. */
+        std::vector<BlockStats> stats;     /**< Statistics of the blocks that make up this level. */
+        size_t lastProcessedCrudeSize = 0; /**< Amount of raw elements already processed for this level. */
     };
 
     /**
@@ -228,50 +215,33 @@ class PlotSeries : protected QOpenGLFunctions
      */
     void recomputeBounds();
 
-    mutable std::mutex
-        m_mutex; /**< Mutex to ensure mutual exclusion across multi-threaded operations. */
-    std::vector<Point>
-        m_points; /**< Primary storage containing raw signal data. */
-    std::vector<Point>
-        m_visibleBuffer; /**< Scratchpad buffer used for exchanging and filtering displayable points. */
+    mutable std::mutex m_mutex;         /**< Mutex to ensure mutual exclusion across multi-threaded operations. */
+    std::vector<Point> m_points;        /**< Primary storage containing raw signal data. */
+    std::vector<Point> m_visibleBuffer; /**< Scratchpad buffer used for exchanging and filtering displayable points. */
 
-    std::vector<LodLevel>
-        m_lodLevels; /**< Dynamic array holding discrete LOD data structures. */
-    static constexpr size_t NUM_LOD_LEVELS =
-        3; /**< Total number of supported Level of Detail tiers. */
-    static constexpr size_t LOD_FACTOR =
-        100; /**< Decimation scaling factor between consecutive LOD levels. */
+    std::vector<LodLevel>   m_lodLevels;          /**< Dynamic array holding discrete LOD data structures. */
+    static constexpr size_t NUM_LOD_LEVELS = 3;   /**< Total number of supported Level of Detail tiers. */
+    static constexpr size_t LOD_FACTOR     = 100; /**< Decimation scaling factor between consecutive LOD levels. */
 
     /**
      * @brief Increments or completely updates the LOD data arrays using newly injected points.
      */
     void updateLodLevels();
 
-    QString m_name;  /**< Name identifier of the series. */
-    QColor  m_color; /**< Rendering color profile. */
-    bool    m_visible =
-        true; /**< Control flag to skip or commit execution of the render pipeline. */
-    float m_lineWidth =
-        1.5f; /**< Line thickness configuration for rasterized rendering commands. */
+    QString m_name;             /**< Name identifier of the series. */
+    QColor  m_color;            /**< Rendering color profile. */
+    bool    m_visible   = true; /**< Control flag to skip or commit execution of the render pipeline. */
+    float   m_lineWidth = 1.5f; /**< Line thickness configuration for rasterized rendering commands. */
 
-    double m_xMin = std::numeric_limits<
-        double>::max(); /**< Cached absolute minimum X boundary. */
-    double m_xMax = -std::numeric_limits<
-        double>::max(); /**< Cached absolute maximum X boundary. */
-    double m_yMin = std::numeric_limits<
-        double>::max(); /**< Cached absolute minimum Y boundary. */
-    double m_yMax = -std::numeric_limits<
-        double>::max(); /**< Cached absolute maximum Y boundary. */
+    double m_xMin = std::numeric_limits<double>::max();  /**< Cached absolute minimum X boundary. */
+    double m_xMax = -std::numeric_limits<double>::max(); /**< Cached absolute maximum X boundary. */
+    double m_yMin = std::numeric_limits<double>::max();  /**< Cached absolute minimum Y boundary. */
+    double m_yMax = -std::numeric_limits<double>::max(); /**< Cached absolute maximum Y boundary. */
 
-    QOpenGLBuffer m_vbo{
-        QOpenGLBuffer::
-            VertexBuffer}; /**< Qt abstraction wrapper for the Vertex Buffer Object. */
-    QOpenGLVertexArrayObject
-         m_vao; /**< Qt abstraction wrapper for the Vertex Array Object. */
-    bool m_glInitialized =
-        false; /**< Confirms whether initGLBuffers was run successfully. */
-    size_t m_pointsInGPU =
-        0; /**< Total count of vertices currently allocated on VRAM. */
+    QOpenGLBuffer m_vbo{QOpenGLBuffer::VertexBuffer}; /**< Qt abstraction wrapper for the Vertex Buffer Object. */
+    QOpenGLVertexArrayObject m_vao;                   /**< Qt abstraction wrapper for the Vertex Array Object. */
+    bool                     m_glInitialized = false; /**< Confirms whether initGLBuffers was run successfully. */
+    size_t                   m_pointsInGPU   = 0;     /**< Total count of vertices currently allocated on VRAM. */
 
     // VBO for OpenGL
 

@@ -32,8 +32,7 @@ double PlotAxis::niceNum(double range, bool round)
     return niceFraction * std::pow(10.0, exponent);
 }
 
-QVector<PlotAxis::Tick> PlotAxis::computeTicks(double lo, double hi,
-                                               int maxTicks)
+QVector<PlotAxis::Tick> PlotAxis::computeTicks(double lo, double hi, int maxTicks)
 {
     QVector<Tick> ticks;
     if (hi <= lo || !std::isfinite(lo) || !std::isfinite(hi))
@@ -62,8 +61,7 @@ QVector<PlotAxis::Tick> PlotAxis::computeTicks(double lo, double hi,
 
     double stepExponent = std::floor(std::log10(step));
 
-    int precision =
-        (stepExponent < 0.0) ? static_cast<int>(std::abs(stepExponent)) : 0;
+    int precision = (stepExponent < 0.0) ? static_cast<int>(std::abs(stepExponent)) : 0;
 
     /*double range   = niceNum(hi - lo, false);
     double step    = niceNum(range / (maxTicks - 1), true);
@@ -76,8 +74,7 @@ QVector<PlotAxis::Tick> PlotAxis::computeTicks(double lo, double hi,
     int safetyCounter  = 0;
     int maxSafetyLimit = maxTicks * 2;
 
-    for (double relVal = firstRelTick; relVal <= relHi + (step * 0.1);
-         relVal += step)
+    for (double relVal = firstRelTick; relVal <= relHi + (step * 0.1); relVal += step)
     {
         if (++safetyCounter > maxSafetyLimit)
         {

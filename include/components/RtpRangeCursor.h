@@ -28,18 +28,13 @@ class RtpRangeCursor
      * @param color Base rendering color layer mapped onto cursor boundary rules.
      * @param style Geometric shape decoration setting applied onto layout bounds (Default: MARKER_FULL).
      */
-    RtpRangeCursor(
-        int index, QColor color,
-        RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_FULL);
+    RtpRangeCursor(int index, QColor color, RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_FULL);
 
     /**
      * @brief Maps the reference data tracking dataset channel lookup collection list.
      * @param series Constant pointer targeting the multi-channel vector stack array.
      */
-    void setSeriesSource(const std::vector<std::shared_ptr<PlotSeries>>* series)
-    {
-        m_seriesRef = series;
-    };
+    void setSeriesSource(const std::vector<std::shared_ptr<PlotSeries>>* series) { m_seriesRef = series; };
 
     /**
      * @brief Adjusts primary text foreground overlay paintbrush color options.
@@ -66,8 +61,7 @@ class RtpRangeCursor
      * @param calculatedPixelStart Screen pixel column tracking localization of start bounds.
      * @param calculatedPixelEnd Screen pixel column tracking localization of end bounds.
      */
-    void draw(QPainter& painter, const QRect& plotArea,
-              int calculatedPixelStart, int calculatedPixelEnd);
+    void draw(QPainter& painter, const QRect& plotArea, int calculatedPixelStart, int calculatedPixelEnd);
 
     /**
      * @brief Evaluates mouse down inputs to trigger active edge translation drag capture cycles.
@@ -76,8 +70,7 @@ class RtpRangeCursor
      * @param currentPixelEnd Extant horizontal pixel location of end border mark.
      * @return Underlying target cursor subcomponent reference capturing drag state, or nullptr if click missed.
      */
-    RtpCursor* mousePressEvent(QMouseEvent* event, int currentPixelStart,
-                               int currentPixelEnd);
+    RtpCursor* mousePressEvent(QMouseEvent* event, int currentPixelStart, int currentPixelEnd);
 
     /**
      * @brief Processes ongoing pointing translation offsets to recompute absolute boundary marks.
@@ -86,8 +79,7 @@ class RtpRangeCursor
      * @param outNewPixelX Output tracking parameter yielding updated location details.
      * @return True if a modification pass took place requiring view update flags.
      */
-    bool mouseMoveEvent(QMouseEvent* event, const QRect& plotArea,
-                        int& outNewPixelX);
+    bool mouseMoveEvent(QMouseEvent* event, const QRect& plotArea, int& outNewPixelX);
 
     /**
      * @brief Finalizes boundary adjustments, unlocking state control loops.
@@ -120,30 +112,21 @@ class RtpRangeCursor
     bool checkReorder();
 
    private:
-    bool m_isEnabled =
-        true; /**< Structural execution state controlling drawing passes. */
-    double m_xPos =
-        0; /**< Master anchor localization reference metric point tracker. */
+    bool   m_isEnabled = true; /**< Structural execution state controlling drawing passes. */
+    double m_xPos      = 0;    /**< Master anchor localization reference metric point tracker. */
 
-    bool m_isDragging =
-        false; /**< Mutual exclusion flag lock tracking interactive relocation inputs. */
-    int m_dragOffset =
-        0; /**< Offset value cache preserving layout adjustment tracking pixels. */
+    bool m_isDragging = false; /**< Mutual exclusion flag lock tracking interactive relocation inputs. */
+    int  m_dragOffset = 0;     /**< Offset value cache preserving layout adjustment tracking pixels. */
 
     int m_cursorIndex; /**< Identifying component order sequence metadata tracking token. */
 
-    QColor
-        m_color; /**< Primary outline and line rule display color definition. */
-    QColor
-        m_bgColor; /**< Readout info box opaque background plate fill color profile. */
+    QColor m_color;   /**< Primary outline and line rule display color definition. */
+    QColor m_bgColor; /**< Readout info box opaque background plate fill color profile. */
 
-    RtpCursor
-        m_cStart; /**< Core tracking subcomponent instance representing left bound marker. */
-    RtpCursor
-        m_cEnd; /**< Core tracking subcomponent instance representing right bound marker. */
+    RtpCursor m_cStart; /**< Core tracking subcomponent instance representing left bound marker. */
+    RtpCursor m_cEnd;   /**< Core tracking subcomponent instance representing right bound marker. */
 
-    RtpCursor::MarkerStyle
-        m_style; /**< Geometric styling shape type rendering configuration mode. */
+    RtpCursor::MarkerStyle m_style; /**< Geometric styling shape type rendering configuration mode. */
 
     /** Internal dataset lookup registry array mapping tracking lines. */
     const std::vector<std::shared_ptr<PlotSeries>>* m_seriesRef = nullptr;

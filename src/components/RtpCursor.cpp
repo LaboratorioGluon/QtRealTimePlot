@@ -38,8 +38,7 @@ bool RtpCursor::mousePressEvent(QMouseEvent* event, int currentPixelX)
     return false;
 }
 
-bool RtpCursor::mouseMoveEvent(QMouseEvent* event, const QRect& plotArea,
-                               int& outNewPixelX)
+bool RtpCursor::mouseMoveEvent(QMouseEvent* event, const QRect& plotArea, int& outNewPixelX)
 {
     if (!m_isDragging)
         return false;
@@ -59,17 +58,15 @@ void RtpCursor::mouseReleaseEvent(QMouseEvent* event)
     m_isDragging = false;
 }
 
-void RtpCursor::drawFullMarker(QPainter& painter, const QRect& plotArea,
-                               int calculatedPixelX, bool alignLeft)
+void RtpCursor::drawFullMarker(QPainter& painter, const QRect& plotArea, int calculatedPixelX, bool alignLeft)
 {
 
     QFontMetrics fm(m_font);
     int          lineHeight = fm.height();
     int          padding    = 4;
 
-    int boxHeight = padding * 2 + lineHeight * (1 + m_seriesRef->size()) +
-                    (m_seriesRef->size() * 2);
-    int boxWidth = 120;
+    int boxHeight = padding * 2 + lineHeight * (1 + m_seriesRef->size()) + (m_seriesRef->size() * 2);
+    int boxWidth  = 120;
 
     int boxX    = alignLeft ? (calculatedPixelX - boxWidth) : calculatedPixelX;
     m_labelRect = QRect(boxX, plotArea.top() + 5, boxWidth, boxHeight);
@@ -80,30 +77,24 @@ void RtpCursor::drawFullMarker(QPainter& painter, const QRect& plotArea,
 
     // Textos
     painter.setPen(m_color);
-    int  textX = alignLeft ? (calculatedPixelX - 4) : (calculatedPixelX + 4);
-    auto alignment = alignLeft ? (Qt::AlignRight | Qt::AlignTop)
-                               : (Qt::AlignLeft | Qt::AlignTop);
-    painter.drawText(QRect(textX, plotArea.top() + 5 + padding,
-                           alignLeft ? -boxWidth : boxWidth, lineHeight)
-                         .normalized(),
-                     alignment, QString("M%1").arg(m_cursorIndex));
+    int  textX     = alignLeft ? (calculatedPixelX - 4) : (calculatedPixelX + 4);
+    auto alignment = alignLeft ? (Qt::AlignRight | Qt::AlignTop) : (Qt::AlignLeft | Qt::AlignTop);
+    painter.drawText(
+        QRect(textX, plotArea.top() + 5 + padding, alignLeft ? -boxWidth : boxWidth, lineHeight).normalized(),
+        alignment, QString("M%1").arg(m_cursorIndex));
 
     int index = 1;
     for (const auto& s : *m_seriesRef)
     {
         painter.setPen(s->color());
-        painter.drawText(
-            QRect(textX,
-                  plotArea.top() + 5 + padding + (lineHeight + 2) * index++,
-                  alignLeft ? -boxWidth : boxWidth, lineHeight)
-                .normalized(),
-            alignment,
-            QString("%1 pA").arg(s->getClosestPointToX(m_xPos).y, 0, 'f', 2));
+        painter.drawText(QRect(textX, plotArea.top() + 5 + padding + (lineHeight + 2) * index++,
+                               alignLeft ? -boxWidth : boxWidth, lineHeight)
+                             .normalized(),
+                         alignment, QString("%1 pA").arg(s->getClosestPointToX(m_xPos).y, 0, 'f', 2));
     }
 }
 
-void RtpCursor::drawSimpleMarker(QPainter& painter, const QRect& plotArea,
-                                 int calculatedPixelX, bool alignLeft)
+void RtpCursor::drawSimpleMarker(QPainter& painter, const QRect& plotArea, int calculatedPixelX, bool alignLeft)
 {
     painter.save();
     painter.setRenderHint(QPainter::Antialiasing, true);
@@ -128,11 +119,9 @@ void RtpCursor::drawSimpleMarker(QPainter& painter, const QRect& plotArea,
 
     path.closeSubpath();
 
-    painter.translate(calculatedPixelX,
-                      plotArea.top() + rectHeight + notchSize);
+    painter.translate(calculatedPixelX, plotArea.top() + rectHeight + notchSize);
 
-    m_labelRect = QRect(calculatedPixelX - rectWidth / 2, plotArea.top(),
-                        rectWidth, rectHeight + notchSize);
+    m_labelRect = QRect(calculatedPixelX - rectWidth / 2, plotArea.top(), rectWidth, rectHeight + notchSize);
 
     painter.setPen(QPen(m_color, 2));
     painter.setBrush(m_bgColor);
@@ -155,20 +144,17 @@ void RtpCursor::drawSimpleMarker(QPainter& painter, const QRect& plotArea,
 
     QRect textRect(-rectWidth / 2, -rectHeight / 2, rectWidth, rectHeight);
 
-    painter.drawText(textRect, Qt::AlignCenter,
-                     QString("M%1").arg(m_cursorIndex));
+    painter.drawText(textRect, Qt::AlignCenter, QString("M%1").arg(m_cursorIndex));
     m_font.setBold(false);
 
     painter.restore();
 }
 
-void RtpCursor::draw(QPainter& painter, const QRect& plotArea,
-                     int calculatedPixelX, const QString& mainLabel,
+void RtpCursor::draw(QPainter& painter, const QRect& plotArea, int calculatedPixelX, const QString& mainLabel,
                      bool alignLeft)
 {
 
-    if (!m_isEnabled || calculatedPixelX < plotArea.left() ||
-        calculatedPixelX > plotArea.right())
+    if (!m_isEnabled || calculatedPixelX < plotArea.left() || calculatedPixelX > plotArea.right())
     {
         m_isVisible  = false;
         m_labelRect  = QRect();
@@ -180,12 +166,10 @@ void RtpCursor::draw(QPainter& painter, const QRect& plotArea,
     painter.save();
     painter.setFont(m_font);
 
-    m_lineHitbox =
-        QRect(calculatedPixelX - 4, plotArea.top(), 8, plotArea.height());
+    m_lineHitbox = QRect(calculatedPixelX - 4, plotArea.top(), 8, plotArea.height());
 
     painter.setPen(QPen(m_color, m_isDragging ? 2 : 1, Qt::SolidLine));
-    painter.drawLine(calculatedPixelX, plotArea.top(), calculatedPixelX,
-                     plotArea.bottom());
+    painter.drawLine(calculatedPixelX, plotArea.top(), calculatedPixelX, plotArea.bottom());
 
     if (m_style == MarkerStyle::MARKER_SIMPLE)
     {

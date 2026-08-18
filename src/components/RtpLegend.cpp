@@ -6,8 +6,7 @@ RtpLegend::RtpLegend() : m_bgColor(QColor(18, 18, 22, 220)), m_padding(6)
     m_font.setPointSize(9);
 }
 
-void RtpLegend::setSeriesSource(
-    const std::vector<std::shared_ptr<PlotSeries>>* series)
+void RtpLegend::setSeriesSource(const std::vector<std::shared_ptr<PlotSeries>>* series)
 {
     m_seriesRef = series;
 }
@@ -48,8 +47,7 @@ void RtpLegend::draw(QPainter& painter, const QRect& plotRect)
     }
 
     int boxWidth  = (m_padding * 2) + indicatorSize + 6 + maxTextWidth + 4;
-    int boxHeight = (m_padding * 2) + (m_seriesRef->size() * lineHeight) +
-                    ((m_seriesRef->size() - 1) * 2);
+    int boxHeight = (m_padding * 2) + (m_seriesRef->size() * lineHeight) + ((m_seriesRef->size() - 1) * 2);
 
     int posX   = plotRect.right() - boxWidth - 10;
     int posY   = plotRect.top() + 10;
@@ -65,9 +63,7 @@ void RtpLegend::draw(QPainter& painter, const QRect& plotRect)
         int  currentX  = posX + m_padding;
         bool isVisible = serie->visible();
 
-        QRect indicatorRect(currentX,
-                            currentY + (lineHeight - indicatorSize) / 2,
-                            indicatorSize, indicatorSize);
+        QRect indicatorRect(currentX, currentY + (lineHeight - indicatorSize) / 2, indicatorSize, indicatorSize);
         if (isVisible)
         {
             painter.setBrush(serie->color());
@@ -87,10 +83,8 @@ void RtpLegend::draw(QPainter& painter, const QRect& plotRect)
         }
         painter.setPen(textCol);
 
-        QRect textRect(currentX + indicatorSize + 6, currentY, maxTextWidth + 4,
-                       lineHeight);
-        painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter,
-                         serie->name());
+        QRect textRect(currentX + indicatorSize + 6, currentY, maxTextWidth + 4, lineHeight);
+        painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, serie->name());
 
         currentY += lineHeight + 2;
     }
@@ -111,8 +105,7 @@ int RtpLegend::checkClick(const QPoint& mousePos) const
 
     for (int i = 0; i < m_seriesRef->size(); ++i)
     {
-        QRect rowRect(m_lastRect.left() + m_padding, currentY,
-                      m_lastRect.width() - (m_padding * 2), lineHeight);
+        QRect rowRect(m_lastRect.left() + m_padding, currentY, m_lastRect.width() - (m_padding * 2), lineHeight);
 
         if (rowRect.contains(mousePos))
         {

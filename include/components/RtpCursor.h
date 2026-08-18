@@ -25,7 +25,7 @@ class RtpCursor
      */
     enum MarkerStyle {
         MARKER_FULL =
-            0, /**< Draws a line stretching across the plot viewport accompanied by a descriptive label badge. */
+            0,        /**< Draws a line stretching across the plot viewport accompanied by a descriptive label badge. */
         MARKER_SIMPLE /**< Draws an abbreviated minimalist handle indicator on the axis line. */
     };
 
@@ -35,17 +35,13 @@ class RtpCursor
      * @param color Primary coloring profile configuration applied onto lines and icons.
      * @param style Presentation rendering geometry profile layout switch (Default: MARKER_FULL).
      */
-    RtpCursor(int index, QColor color,
-              MarkerStyle style = MarkerStyle::MARKER_FULL);
+    RtpCursor(int index, QColor color, MarkerStyle style = MarkerStyle::MARKER_FULL);
 
     /**
      * @brief Pairs the cursor context directly to a tracked sequence dataset list.
      * @param series Constant pointer targeting the shared data channels tracking array vector.
      */
-    void setSeriesSource(const std::vector<std::shared_ptr<PlotSeries>>* series)
-    {
-        m_seriesRef = series;
-    };
+    void setSeriesSource(const std::vector<std::shared_ptr<PlotSeries>>* series) { m_seriesRef = series; };
 
     /**
      * @brief Renders the cursor lines, intersection grips, and value tags onto the active view canvas.
@@ -55,8 +51,8 @@ class RtpCursor
      * @param mainLabel Custom text string to show inside the information tooltip bubble.
      * @param alignLeft Toggles justification layout alignment direction preferences for text tags.
      */
-    void draw(QPainter& painter, const QRect& plotArea, int calculatedPixelX,
-              const QString& mainLabel, bool alignLeft = true);
+    void draw(QPainter& painter, const QRect& plotArea, int calculatedPixelX, const QString& mainLabel,
+              bool alignLeft = true);
 
     /***** Styling *****/
 
@@ -101,8 +97,7 @@ class RtpCursor
      * @param outNewPixelX Output column tracking parameter yielding modified layout location values.
      * @return True if a reposition sequence occurs requiring view updates.
      */
-    bool mouseMoveEvent(QMouseEvent* event, const QRect& plotArea,
-                        int& outNewPixelX);
+    bool mouseMoveEvent(QMouseEvent* event, const QRect& plotArea, int& outNewPixelX);
 
     /**
      * @brief Breaks active pointer capture tracking loops, releasing global control lock status flags.
@@ -134,33 +129,22 @@ class RtpCursor
     bool contains(const QPoint& pos) const;
 
    private:
-    bool m_isEnabled =
-        true; /**< Internal execution state controlling drawing passes. */
-    double m_xPos =
-        0; /**< Target coordinate placement metric tracking location across data domains. */
+    bool   m_isEnabled = true; /**< Internal execution state controlling drawing passes. */
+    double m_xPos      = 0;    /**< Target coordinate placement metric tracking location across data domains. */
 
-    bool m_isDragging =
-        false; /**< Core tracking flag state tracking translation click drag cycles. */
-    int m_dragOffset =
-        0; /**< Variable preserving delta pixel offsets across movement loops. */
+    bool m_isDragging = false; /**< Core tracking flag state tracking translation click drag cycles. */
+    int  m_dragOffset = 0;     /**< Variable preserving delta pixel offsets across movement loops. */
 
-    int m_cursorIndex; /**< Positional tracking queue metadata order sequence tag. */
-    bool m_isVisible =
-        false; /**< Temporary runtime visibility evaluation storage state tracker. */
-    QFont
-        m_font; /**< Typography attribute profiles mapped onto label strings. */
-    QColor
-        m_color; /**< Base coloring applied across outline rules and vectors. */
-    QColor
-        m_bgColor; /**< Solid background plate color applied behind data popups. */
+    int    m_cursorIndex;       /**< Positional tracking queue metadata order sequence tag. */
+    bool   m_isVisible = false; /**< Temporary runtime visibility evaluation storage state tracker. */
+    QFont  m_font;              /**< Typography attribute profiles mapped onto label strings. */
+    QColor m_color;             /**< Base coloring applied across outline rules and vectors. */
+    QColor m_bgColor;           /**< Solid background plate color applied behind data popups. */
 
-    QRect
-        m_labelRect; /**< Interactive geometry container boundaries enclosing value tooltip cards. */
-    QRect
-        m_lineHitbox; /**< Oversized virtual selection envelope padding thin lines to simplify target grab clicks. */
+    QRect m_labelRect;  /**< Interactive geometry container boundaries enclosing value tooltip cards. */
+    QRect m_lineHitbox; /**< Oversized virtual selection envelope padding thin lines to simplify target grab clicks. */
 
-    MarkerStyle
-        m_style; /**< Active geometric decoration formatting behavior profile. */
+    MarkerStyle m_style; /**< Active geometric decoration formatting behavior profile. */
 
     /** Shared repository address collection reference mapping active data vectors. */
     const std::vector<std::shared_ptr<PlotSeries>>* m_seriesRef = nullptr;
@@ -168,14 +152,12 @@ class RtpCursor
     /**
      * @brief Geometry drawer executing viewport line layouts with floating readout badges.
      */
-    void drawFullMarker(QPainter& painter, const QRect& plotArea,
-                        int calculatedPixelX, bool alignLeft);
+    void drawFullMarker(QPainter& painter, const QRect& plotArea, int calculatedPixelX, bool alignLeft);
 
     /**
      * @brief Geometry drawer rendering structural low-profile handle markers on axis frames.
      */
-    void drawSimpleMarker(QPainter& painter, const QRect& plotArea,
-                          int calculatedPixelX, bool alignLeft);
+    void drawSimpleMarker(QPainter& painter, const QRect& plotArea, int calculatedPixelX, bool alignLeft);
 };
 
 #endif  // RTPCURSOR_H__

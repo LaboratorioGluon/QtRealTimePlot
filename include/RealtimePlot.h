@@ -68,9 +68,8 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      * @brief Visual properties of the plot grid background.
      */
     struct GridStyle {
-        bool   enabled = true; /**< Toggle to draw or hide grid lines. */
-        QColor color =
-            QColor(55, 55, 65); /**< RGBA color assigned to the grid lines. */
+        bool   enabled = true;               /**< Toggle to draw or hide grid lines. */
+        QColor color   = QColor(55, 55, 65); /**< RGBA color assigned to the grid lines. */
     };
 
     /**
@@ -115,9 +114,7 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      * @param maxPoints Upper boundary capacity threshold for internal circular buffer.
      * @return Shared pointer reference to the created PlotSeries instance.
      */
-    std::shared_ptr<PlotSeries> addSeries(const QString& name,
-                                          QColor         color     = Qt::cyan,
-                                          size_t         maxPoints = 10000);
+    std::shared_ptr<PlotSeries> addSeries(const QString& name, QColor color = Qt::cyan, size_t maxPoints = 10000);
 
     /**
      * @brief Adds a pre-existing externally built series into the rendering manager.
@@ -148,16 +145,14 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      * 
      * @param style type of cursor to add.
      */
-    void addCursor(
-        RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE);
+    void addCursor(RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE);
 
     /**
      * @brief Add cursor in position.
      * @param xPos Position in data coordinates to place the cursor
      * @param style type of cursor to add.
      */
-    void addCursor(double xPos, RtpCursor::MarkerStyle style =
-                                    RtpCursor::MarkerStyle::MARKER_SIMPLE);
+    void addCursor(double xPos, RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE);
 
     void setRangeCursorEnable(bool enable) { m_cursorRange.enable(enable); }
     void setRangeCursorPos(double start, double end)
@@ -239,20 +234,16 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      * @param color Palette color tag assigned to distinguish marker line (Default: transparent).
      * @param style Shape layout decoration applied onto cursor anchor target points.
      */
-    void addCursor(
-        float xValue, QColor color = Qt::transparent,
-        RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE)
+    void addCursor(float xValue, QColor color = Qt::transparent,
+                   RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE)
     {
         m_cursors.push_back(
             RtpCursor(m_cursors.size(),
-                      color == Qt::transparent
-                          ? colorList[m_cursors.size() % (colorList.size())]
-                          : color,
-                      style));
+                      color == Qt::transparent ? colorList[m_cursors.size() % (colorList.size())] : color, style));
     };
 
     /** @param enable Toggles state of the specialized range cursor subcomponent. */
-    void enableRangeCursor(bool enable) { m_cursorRange.enable(enable); }
+    void            enableRangeCursor(bool enable) { m_cursorRange.enable(enable); }
     /** @return Pointer to internal range validation tracking subcomponent structure. */
     RtpRangeCursor* getRangeCursor() { return &m_cursorRange; }
 
@@ -320,96 +311,63 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
     QRect plotArea() const;
 
     // Draw passes
-    void drawGrid(const QRect& area, const QVector<PlotAxis::Tick>& xTicks,
-                  const QVector<PlotAxis::Tick>& yTicks);
+    void drawGrid(const QRect& area, const QVector<PlotAxis::Tick>& xTicks, const QVector<PlotAxis::Tick>& yTicks);
     void drawSeries(const QRect& area);
-    void drawAxes(const QRect& area, const QVector<PlotAxis::Tick>& xTicks,
-                  const QVector<PlotAxis::Tick>& yTicks);
+    void drawAxes(const QRect& area, const QVector<PlotAxis::Tick>& xTicks, const QVector<PlotAxis::Tick>& yTicks);
 
     // GL primitives (pixel-space coords)
-    void drawLineStrip(const std::vector<float>& verts, QColor color,
-                       float width);
+    void drawLineStrip(const std::vector<float>& verts, QColor color, float width);
     void drawLines(const std::vector<float>& verts, QColor color, float width);
 
     void applyZoom(double factor, QPoint anchor);
     void emitViewChanged();
 
     // --- Data ---
-    std::vector<std::shared_ptr<PlotSeries>>
-        m_series; /**< Master data collection vector of tracked display streams. */
+    std::vector<std::shared_ptr<PlotSeries>> m_series; /**< Master data collection vector of tracked display streams. */
 
     // --- View state ---
-    double m_xMin = 0.0,
-           m_xMax = 1.0; /**< Horizontal observation limit scope metrics. */
-    double m_yMin = 0.0,
-           m_yMax = 1.0; /**< Vertical observation limit scope metrics. */
-    bool m_viewInitialized =
-        false; /**< Safety control flag checking viewport validity. */
+    double m_xMin = 0.0, m_xMax = 1.0; /**< Horizontal observation limit scope metrics. */
+    double m_yMin = 0.0, m_yMax = 1.0; /**< Vertical observation limit scope metrics. */
+    bool   m_viewInitialized = false;  /**< Safety control flag checking viewport validity. */
 
     // --- Style ---
-    QColor m_bgColor{
-        18, 18,
-        22}; /**< Viewport baseline core wash clearing background fill color. */
-    QColor m_axisColor{
-        120, 120,
-        130}; /**< Primary reference edge line boundary color mapping indicator. */
-    QColor m_textColor{
-        200, 200,
-        210}; /**< Numeric label and heading string font canvas printing layout color. */
-    GridStyle
-        m_grid; /**< Grid operational style definition map metadata payload. */
-    MarginPx
-        m_margin; /**< Functional margin offset allocation context matrix parameters. */
-    QFont
-        m_tickFont; /**< Font profile styling context configuration applied on axis numerals. */
-    QFont
-        m_labelFont; /**< Font profile styling context configuration applied on main titles. */
-    QString m_title, m_xLabel,
-        m_yLabel; /**< Axis and plot header descriptive text label string records. */
-    bool m_legendVisible =
-        true; /**< Visibility override switch state assigned to control panel overlay. */
+    QColor    m_bgColor{18, 18, 22};       /**< Viewport baseline core wash clearing background fill color. */
+    QColor    m_axisColor{120, 120, 130};  /**< Primary reference edge line boundary color mapping indicator. */
+    QColor    m_textColor{200, 200, 210};  /**< Numeric label and heading string font canvas printing layout color. */
+    GridStyle m_grid;                      /**< Grid operational style definition map metadata payload. */
+    MarginPx  m_margin;                    /**< Functional margin offset allocation context matrix parameters. */
+    QFont     m_tickFont;                  /**< Font profile styling context configuration applied on axis numerals. */
+    QFont     m_labelFont;                 /**< Font profile styling context configuration applied on main titles. */
+    QString   m_title, m_xLabel, m_yLabel; /**< Axis and plot header descriptive text label string records. */
+    bool      m_legendVisible = true;      /**< Visibility override switch state assigned to control panel overlay. */
 
     // --- Behavior ---
-    ZoomMode m_zoomMode = ZoomMode::
-        XY; /**< Positional scaling locking parameter selection profile. */
-    bool m_zoomAuto =
-        true; /**< Automation tracking configuration state override directive. */
+    ZoomMode m_zoomMode   = ZoomMode::XY; /**< Positional scaling locking parameter selection profile. */
+    bool     m_zoomAuto   = true;         /**< Automation tracking configuration state override directive. */
     uint32_t m_zoomWindow = 0;
 
     // --- Interaction ---
-    bool m_panning =
-        false; /**< Intermittent active click drag translation tracking state indicator. */
-    bool m_selecting =
-        false; /**< Intermittent active click drag window box boundary select zoom indicator. */
-    QPoint
-        m_lastMousePos; /**< Intermediate tracking position coordinate of historical mouse move cursor event. */
-    QPoint m_selStart,
-        m_selEnd; /**< Screen space box boundaries tracking indices for selection boxes. */
+    bool   m_panning   = false; /**< Intermittent active click drag translation tracking state indicator. */
+    bool   m_selecting = false; /**< Intermittent active click drag window box boundary select zoom indicator. */
+    QPoint m_lastMousePos;      /**< Intermediate tracking position coordinate of historical mouse move cursor event. */
+    QPoint m_selStart, m_selEnd; /**< Screen space box boundaries tracking indices for selection boxes. */
 
     // --- GL ---
-    QTimer* m_timer =
-        nullptr; /**< Internal refresh loop triggering clock interval execution manager. */
-    QOpenGLShaderProgram* m_shader =
-        nullptr; /**< Compiled OpenGL program binding primitive geometry layout logic. */
-    bool m_shaderReady =
-        false; /**< Pipeline validation control flag ensuring compilation stability. */
+    QTimer*               m_timer  = nullptr; /**< Internal refresh loop triggering clock interval execution manager. */
+    QOpenGLShaderProgram* m_shader = nullptr; /**< Compiled OpenGL program binding primitive geometry layout logic. */
+    bool m_shaderReady             = false;   /**< Pipeline validation control flag ensuring compilation stability. */
 
     // --- Cursors ---
-    std::vector<RtpCursor>
-        m_cursors; /**< Extended sequence payload containing dynamic user cursor additions. */
-    RtpRangeCursor
-        m_cursorRange; /**< Specialized range tracking cursor evaluation context module component. */
+    std::vector<RtpCursor> m_cursors;     /**< Extended sequence payload containing dynamic user cursor additions. */
+    RtpRangeCursor         m_cursorRange; /**< Specialized range tracking cursor evaluation context module component. */
 
     // Drag management
     /**< Active cursor selection tracking identifier context mode. */
-    CursorType m_activeCursor = CursorType::None;
-    RtpCursor* m_activeCursorRef =
-        nullptr; /**< Direct memory reference address to dragged object context instance. */
-    const int m_clickTolerancePixels =
-        7; /**< Click bounding halo tolerance scope diameter context scale. */
+    CursorType m_activeCursor    = CursorType::None;
+    RtpCursor* m_activeCursorRef = nullptr; /**< Direct memory reference address to dragged object context instance. */
+    const int  m_clickTolerancePixels = 7;  /**< Click bounding halo tolerance scope diameter context scale. */
 
-    RtpLegend
-        m_legend; /**< Secondary render presentation layer mapping data streams to labels. */
+    RtpLegend m_legend; /**< Secondary render presentation layer mapping data streams to labels. */
 
     static const std::vector<QColor>
         colorList; /**< Palette definition array used to automate color assignment layers. */

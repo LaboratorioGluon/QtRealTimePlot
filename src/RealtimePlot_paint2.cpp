@@ -57,8 +57,7 @@ void RealtimePlot::initializeGL()
 
     m_shader = new QOpenGLShaderProgram(this);
     if (m_shader->addShaderFromSourceCode(QOpenGLShader::Vertex, kVertSrc) &&
-        m_shader->addShaderFromSourceCode(QOpenGLShader::Fragment, kFragSrc) &&
-        m_shader->link())
+        m_shader->addShaderFromSourceCode(QOpenGLShader::Fragment, kFragSrc) && m_shader->link())
     {
         m_shaderReady = true;
     }
@@ -97,11 +96,9 @@ void RealtimePlot::paintGL()
     }
 
     // Compute ticks once per frame
-    QRect area = plotArea();
-    auto  xTicks =
-        PlotAxis::computeTicks(m_xMin, m_xMax, std::max(10, area.width() / 80));
-    auto yTicks = PlotAxis::computeTicks(m_yMin, m_yMax,
-                                         std::max(10, area.height() / 50));
+    QRect area   = plotArea();
+    auto  xTicks = PlotAxis::computeTicks(m_xMin, m_xMax, std::max(10, area.width() / 80));
+    auto  yTicks = PlotAxis::computeTicks(m_yMin, m_yMax, std::max(10, area.height() / 50));
 
     int fontSize = 12;
     m_tickFont.setPointSize(fontSize);
@@ -142,16 +139,14 @@ void RealtimePlot::paintGL()
     if (!m_title.isEmpty())
     {
         painter.setFont(m_labelFont);
-        painter.drawText(QRect(0, 2, width(), m_margin.top - 2),
-                         Qt::AlignHCenter | Qt::AlignBottom, m_title);
+        painter.drawText(QRect(0, 2, width(), m_margin.top - 2), Qt::AlignHCenter | Qt::AlignBottom, m_title);
     }
 
     // X label
     if (!m_xLabel.isEmpty())
     {
         painter.setFont(m_labelFont);
-        painter.drawText(QRect(m_margin.left, height() - m_margin.bottom + 22,
-                               area.width(), m_margin.bottom - 22),
+        painter.drawText(QRect(m_margin.left, height() - m_margin.bottom + 22, area.width(), m_margin.bottom - 22),
                          Qt::AlignHCenter | Qt::AlignTop, m_xLabel);
     }
 
@@ -162,8 +157,7 @@ void RealtimePlot::paintGL()
         painter.save();
         painter.translate(14, m_margin.top + area.height() / 2);
         painter.rotate(-90);
-        painter.drawText(QRect(-60, -10, 120, 20),
-                         Qt::AlignHCenter | Qt::AlignVCenter, m_yLabel);
+        painter.drawText(QRect(-60, -10, 120, 20), Qt::AlignHCenter | Qt::AlignVCenter, m_yLabel);
         painter.restore();
     }
 
@@ -196,16 +190,14 @@ void RealtimePlot::paintGL()
         }
     }
 
-    m_cursorRange.draw(painter, plotArea(),
-                       dataToPixel(m_cursorRange.getPosStart(), 0).x(),
+    m_cursorRange.draw(painter, plotArea(), dataToPixel(m_cursorRange.getPosStart(), 0).x(),
                        dataToPixel(m_cursorRange.getPosEnd(), 0).x());
 
     int cIndex = 1;
     for (auto it = std::rbegin(m_cursors); it != std::rend(m_cursors); ++it)
     {
         auto& c = *it;
-        c.draw(painter, plotArea(), dataToPixel(c.getPos(), 0).x(),
-               QString("Marker %1").arg(cIndex++));
+        c.draw(painter, plotArea(), dataToPixel(c.getPos(), 0).x(), QString("Marker %1").arg(cIndex++));
     }
 
     painter.end();
@@ -213,15 +205,14 @@ void RealtimePlot::paintGL()
     glFinish();
 
 #ifdef RTP_ENABLE_DEBUG
-    auto end = std::chrono::high_resolution_clock::now();
+    auto                                      end     = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - startTimer;
 
     static int frameCount = 0;
     if (++frameCount % 30 == 0)
     {
         qDebug() << "Tiempo de paintGL():" << elapsed.count() << "ms"
-                 << "| FPS teóricos:" << (1000.0 / elapsed.count())
-                 << " | Puntos: " << m_series[0]->size();
+                 << "| FPS teóricos:" << (1000.0 / elapsed.count()) << " | Puntos: " << m_series[0]->size();
     }
 #endif
 }
@@ -229,9 +220,8 @@ void RealtimePlot::paintGL()
 // ==========================================================================
 //  Grid
 // ==========================================================================
-#include <stdio.h>
-void RealtimePlot::drawGrid(const QRect&                   area,
-                            const QVector<PlotAxis::Tick>& xTicks,
+
+void RealtimePlot::drawGrid(const QRect& area, const QVector<PlotAxis::Tick>& xTicks,
                             const QVector<PlotAxis::Tick>& yTicks)
 {
     if (!m_grid.enabled)
@@ -283,15 +273,12 @@ void RealtimePlot::drawSeries(const QRect& area)
     glEnable(GL_SCISSOR_TEST);
     const float dpr = static_cast<float>(devicePixelRatioF());
 
-    glScissor(area.left() * dpr, (height() - area.bottom() - 1) * dpr,
-              area.width() * dpr, area.height() * dpr);
+    glScissor(area.left() * dpr, (height() - area.bottom() - 1) * dpr, area.width() * dpr, area.height() * dpr);
     m_shader->bind();
 
-    m_shader->setUniformValue("u_viewport", (float)width() * dpr,
-                              (float)height() * dpr);
-    m_shader->setUniformValue(
-        "u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
-        (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
+    m_shader->setUniformValue("u_viewport", (float)width() * dpr, (float)height() * dpr);
+    m_shader->setUniformValue("u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
+                              (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
 
     int loc = m_shader->attributeLocation("a_position");
 
@@ -306,8 +293,7 @@ void RealtimePlot::drawSeries(const QRect& area)
         if (!s->visible())
             continue;
 
-        const std::vector<PlotSeries::Point>& visiblePts =
-            s->getVisiblePoints(m_xMin, m_xMax, area.width());
+        const std::vector<PlotSeries::Point>& visiblePts = s->getVisiblePoints(m_xMin, m_xMax, area.width());
         if (visiblePts.size() < 2)
             continue;
 
@@ -325,17 +311,15 @@ void RealtimePlot::drawSeries(const QRect& area)
 
         s->uploadVisiblePoints(normPts);
 
-        m_shader->setUniformValue(
-            "u_color", (float)s->color().redF(), (float)s->color().greenF(),
-            (float)s->color().blueF(), (float)s->color().alphaF());
+        m_shader->setUniformValue("u_color", (float)s->color().redF(), (float)s->color().greenF(),
+                                  (float)s->color().blueF(), (float)s->color().alphaF());
         glLineWidth(s->lineWidth() * dpr);
 
         s->vao()->bind();
         s->vbo().bind();
 
         glEnableVertexAttribArray(loc);
-        glVertexAttribPointer(loc, 2, GL_FLOAT, GL_FALSE,
-                              sizeof(PlotSeries::NormalizedPoint), nullptr);
+        glVertexAttribPointer(loc, 2, GL_FLOAT, GL_FALSE, sizeof(PlotSeries::NormalizedPoint), nullptr);
 
         glDrawArrays(GL_LINE_STRIP, 0, static_cast<GLsizei>(normPts.size()));
 
@@ -350,8 +334,7 @@ void RealtimePlot::drawSeries(const QRect& area)
 // ==========================================================================
 //  Axes border + tick marks
 // ==========================================================================
-void RealtimePlot::drawAxes(const QRect&                   area,
-                            const QVector<PlotAxis::Tick>& xTicks,
+void RealtimePlot::drawAxes(const QRect& area, const QVector<PlotAxis::Tick>& xTicks,
                             const QVector<PlotAxis::Tick>& yTicks)
 {
 
@@ -382,16 +365,14 @@ void RealtimePlot::drawAxes(const QRect&                   area,
         ticks.push_back(xNorm);
         ticks.push_back(0.0f);
         ticks.push_back(xNorm);
-        ticks.push_back(
-            -yTickSizeNorm);  // Se extiende un poco hacia abajo del borde inferior
+        ticks.push_back(-yTickSizeNorm);  // Se extiende un poco hacia abajo del borde inferior
     }
     for (const auto& t : yTicks)
     {
         float yNorm = static_cast<float>((t.value - m_yMin) / yRange);
         ticks.push_back(0.0f);
         ticks.push_back(yNorm);
-        ticks.push_back(
-            -xTickSizeNorm);  // Se extiende hacia la izquierda del borde izquierdo
+        ticks.push_back(-xTickSizeNorm);  // Se extiende hacia la izquierda del borde izquierdo
         ticks.push_back(yNorm);
     }
     drawLines(ticks, m_axisColor, 1.0f * dpr);
@@ -400,22 +381,18 @@ void RealtimePlot::drawAxes(const QRect&                   area,
 // ==========================================================================
 //  Low-level GL: line strip (connected)
 // ==========================================================================
-void RealtimePlot::drawLineStrip(const std::vector<float>& verts, QColor color,
-                                 float lineWidth)
+void RealtimePlot::drawLineStrip(const std::vector<float>& verts, QColor color, float lineWidth)
 {
     if (verts.size() < 4 || !m_shaderReady)
         return;
 
     m_shader->bind();
     const float dpr = static_cast<float>(devicePixelRatioF());
-    m_shader->setUniformValue("u_viewport", (float)width() * dpr,
-                              (float)height() * dpr);
-    m_shader->setUniformValue("u_color", (float)color.redF(),
-                              (float)color.greenF(), (float)color.blueF(),
+    m_shader->setUniformValue("u_viewport", (float)width() * dpr, (float)height() * dpr);
+    m_shader->setUniformValue("u_color", (float)color.redF(), (float)color.greenF(), (float)color.blueF(),
                               (float)color.alphaF());
-    m_shader->setUniformValue(
-        "u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
-        (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
+    m_shader->setUniformValue("u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
+                              (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
 
     int loc = m_shader->attributeLocation("a_position");
     m_shader->enableAttributeArray(loc);
@@ -431,8 +408,7 @@ void RealtimePlot::drawLineStrip(const std::vector<float>& verts, QColor color,
 // ==========================================================================
 //  Low-level GL: independent line segments (not a strip)
 // ==========================================================================
-void RealtimePlot::drawLines(const std::vector<float>& verts, QColor color,
-                             float lineWidth)
+void RealtimePlot::drawLines(const std::vector<float>& verts, QColor color, float lineWidth)
 {
     if (verts.size() < 4 || !m_shaderReady)
         return;
@@ -440,14 +416,11 @@ void RealtimePlot::drawLines(const std::vector<float>& verts, QColor color,
 
     m_shader->bind();
 
-    m_shader->setUniformValue("u_viewport", (float)width() * dpr,
-                              (float)height() * dpr);
-    m_shader->setUniformValue("u_color", (float)color.redF(),
-                              (float)color.greenF(), (float)color.blueF(),
+    m_shader->setUniformValue("u_viewport", (float)width() * dpr, (float)height() * dpr);
+    m_shader->setUniformValue("u_color", (float)color.redF(), (float)color.greenF(), (float)color.blueF(),
                               (float)color.alphaF());
-    m_shader->setUniformValue(
-        "u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
-        (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
+    m_shader->setUniformValue("u_margins", (float)m_margin.left * dpr, (float)m_margin.right * dpr,
+                              (float)m_margin.top * dpr, (float)m_margin.bottom * dpr);
 
     int loc = m_shader->attributeLocation("a_position");
     m_shader->enableAttributeArray(loc);
