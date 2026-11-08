@@ -1,34 +1,33 @@
-#include "PlotSeries.h"
+#include "SampleBuffer.h"
 
 #include <algorithm>
 #include <cmath>
 
-namespace {
+namespace
+{
 
 template <typename Container>
 auto lowerByX(const Container& c, double x)
 {
-    return std::lower_bound(c.begin(), c.end(), x, [](const PlotSeries::Point& p, double v) { return p.x < v; });
+    return std::lower_bound(c.begin(), c.end(), x, [](const SampleBuffer::Point& p, double v) { return p.x < v; });
 }
 
 template <typename Container>
 auto upperByX(const Container& c, double x)
 {
-    return std::upper_bound(c.begin(), c.end(), x, [](double v, const PlotSeries::Point& p) { return v < p.x; });
+    return std::upper_bound(c.begin(), c.end(), x, [](double v, const SampleBuffer::Point& p) { return v < p.x; });
 }
 
 }  // namespace
 
-PlotSeries::PlotSeries(QString name, QColor color, size_t maxPoints)
-    : m_maxPoints(maxPoints), m_name(std::move(name)), m_color(color)
-{}
+SampleBuffer::SampleBuffer(size_t maxPoints) : m_maxPoints(maxPoints) {}
 
-bool PlotSeries::pushPoint(double x, double y)
+bool SampleBuffer::pushPoint(double x, double y)
 {
     return pushPoint(Point{x, y});
 }
 
-bool PlotSeries::pushPoint(const Point& p)
+bool SampleBuffer::pushPoint(const Point& p)
 {
     if (!std::isfinite(p.x) || !std::isfinite(p.y))
     {
@@ -67,7 +66,7 @@ bool PlotSeries::pushPoint(const Point& p)
     return true;
 }
 
-void PlotSeries::clear()
+void SampleBuffer::clear()
 {
     std::lock_guard<std::mutex> lg(m_mutex);
     for (auto& level : m_lodLevels)
@@ -82,7 +81,7 @@ void PlotSeries::clear()
     ++m_version;
 }
 
-void PlotSeries::setMaxPoints(size_t maxPoints)
+void SampleBuffer::setMaxPoints(size_t maxPoints)
 {
     std::lock_guard<std::mutex> lg(m_mutex);
     m_maxPoints = maxPoints;
@@ -90,46 +89,46 @@ void PlotSeries::setMaxPoints(size_t maxPoints)
     ++m_version;
 }
 
-size_t PlotSeries::maxPoints() const
+size_t SampleBuffer::maxPoints() const
 {
     std::lock_guard<std::mutex> lg(m_mutex);
     return m_maxPoints;
 }
 
-std::unique_lock<std::mutex> PlotSeries::lock() const
+std::unique_lock<std::mutex> SampleBuffer::lock() const
 {
     return std::unique_lock<std::mutex>(m_mutex);
 }
 
-size_t PlotSeries::size() const
+size_t SampleBuffer::size() const
 {
     std::lock_guard<std::mutex> lg(m_mutex);
     return m_lodLevels[0].points.size();
 }
 
-double PlotSeries::xMin() const
+double SampleBuffer::xMin() const
 {
     const auto& raw = m_lodLevels[0].points;
     return raw.empty() ? std::numeric_limits<double>::max() : raw.front().x;
 }
 
-double PlotSeries::xMax() const
+double SampleBuffer::xMax() const
 {
     const auto& raw = m_lodLevels[0].points;
     return raw.empty() ? -std::numeric_limits<double>::max() : raw.back().x;
 }
 
-double PlotSeries::yMin() const
+double SampleBuffer::yMin() const
 {
     return m_yMinQueue.empty() ? std::numeric_limits<double>::max() : m_yMinQueue.front().second;
 }
 
-double PlotSeries::yMax() const
+double SampleBuffer::yMax() const
 {
     return m_yMaxQueue.empty() ? -std::numeric_limits<double>::max() : m_yMaxQueue.front().second;
 }
 
-void PlotSeries::enforceCapacity()
+void SampleBuffer::enforceCapacity()
 {
     auto& L0 = m_lodLevels[0];
     if (m_maxPoints == 0 || L0.points.size() <= m_maxPoints)
@@ -164,14 +163,14 @@ void PlotSeries::enforceCapacity()
     }
 }
 
-void PlotSeries::updateLodLevels()
+void SampleBuffer::updateLodLevels()
 {
     // Level 1: min/max + statistics of each block of LOD_FACTOR raw samples.
     {
-        const auto& L0  = m_lodLevels[0];
-        auto&       L1  = m_lodLevels[1];
-        uint64_t    next = std::max(L1.nextSource, L0.base);
-        const uint64_t end = L0.base + L0.points.size();
+        const auto&    L0   = m_lodLevels[0];
+        auto&          L1   = m_lodLevels[1];
+        uint64_t       next = std::max(L1.nextSource, L0.base);
+        const uint64_t end  = L0.base + L0.points.size();
 
         while (end - next >= LOD_FACTOR)
         {
@@ -216,10 +215,10 @@ void PlotSeries::updateLodLevels()
 
     // Level 2: min/max of each block of LOD_FACTOR level-1 points.
     {
-        const auto& L1   = m_lodLevels[1];
-        auto&       L2   = m_lodLevels[2];
-        uint64_t    next = std::max(L2.nextSource, L1.base);
-        const uint64_t end = L1.base + L1.points.size();
+        const auto&    L1   = m_lodLevels[1];
+        auto&          L2   = m_lodLevels[2];
+        uint64_t       next = std::max(L2.nextSource, L1.base);
+        const uint64_t end  = L1.base + L1.points.size();
 
         while (end - next >= LOD_FACTOR)
         {
@@ -241,8 +240,8 @@ void PlotSeries::updateLodLevels()
     }
 }
 
-void PlotSeries::gatherPoints(size_t level, double lo, double hi, bool loInclusive, bool hiInclusive,
-                              std::vector<Point>& out) const
+void SampleBuffer::gatherPoints(size_t level, double lo, double hi, bool loInclusive, bool hiInclusive,
+                                std::vector<Point>& out) const
 {
     if (lo > hi)
         return;
@@ -281,87 +280,41 @@ void PlotSeries::gatherPoints(size_t level, double lo, double hi, bool loInclusi
     }
 }
 
-std::vector<PlotSeries::Point>& PlotSeries::getVisiblePoints(double xMin, double xMax, int targetWidth)
+void SampleBuffer::copyVisibleRange(double xMin, double xMax, int targetWidth, std::vector<Point>& out) const
 {
-    m_visibleBuffer.clear();
-    m_gatherBuffer.clear();
-
+    out.clear();
     if (targetWidth <= 0 || !(xMax > xMin))
-        return m_visibleBuffer;
+        return;
 
-    {
-        std::lock_guard<std::mutex> lg(m_mutex);
-        const auto&                 raw = m_lodLevels[0].points;
-        if (raw.empty())
-            return m_visibleBuffer;
+    std::lock_guard<std::mutex> lg(m_mutex);
+    const auto&                 raw = m_lodLevels[0].points;
+    if (raw.empty())
+        return;
 
-        const size_t totalVisibleRaw = std::distance(lowerByX(raw, xMin), upperByX(raw, xMax));
-        if (totalVisibleRaw == 0)
-            return m_visibleBuffer;
+    const auto   first           = lowerByX(raw, xMin);
+    const auto   last            = upperByX(raw, xMax);
+    const size_t totalVisibleRaw = std::distance(first, last);
 
-        const double pointsPerPixel = static_cast<double>(totalVisibleRaw) / targetWidth;
-        size_t       level          = 0;
-        if (pointsPerPixel > 10000.0)
-            level = 2;
-        else if (pointsPerPixel > 100.0)
-            level = 1;
+    // Each tier keeps 2 points per LOD_FACTOR of the tier below. Pick the coarsest
+    // one that still leaves at least ~2 points per pixel.
+    const double pointsPerPixel = static_cast<double>(totalVisibleRaw) / targetWidth;
+    size_t       level          = 0;
+    if (pointsPerPixel > static_cast<double>(LOD_FACTOR * LOD_FACTOR))
+        level = 2;
+    else if (pointsPerPixel > static_cast<double>(LOD_FACTOR))
+        level = 1;
 
-        gatherPoints(level, xMin, xMax, true, true, m_gatherBuffer);
-    }
-
-    // Everything below runs without the lock.
-    const size_t maxPointsThreshold = static_cast<size_t>(targetWidth) * 2;
-    if (m_gatherBuffer.size() <= maxPointsThreshold)
-    {
-        std::swap(m_visibleBuffer, m_gatherBuffer);
-        return m_visibleBuffer;
-    }
-
-    m_visibleBuffer.reserve(maxPointsThreshold);
-    m_buckets.assign(static_cast<size_t>(targetWidth), BucketData{});
-
-    const double scale = static_cast<double>(targetWidth) / (xMax - xMin);
-    for (const Point& p : m_gatherBuffer)
-    {
-        int pixelIdx = static_cast<int>((p.x - xMin) * scale);
-        pixelIdx     = std::clamp(pixelIdx, 0, targetWidth - 1);
-
-        BucketData& b = m_buckets[pixelIdx];
-        if (!b.assigned)
-        {
-            b.minPt    = p;
-            b.maxPt    = p;
-            b.assigned = true;
-        }
-        else
-        {
-            if (p.y < b.minPt.y)
-                b.minPt = p;
-            if (p.y > b.maxPt.y)
-                b.maxPt = p;
-        }
-    }
-
-    for (const BucketData& b : m_buckets)
-    {
-        if (!b.assigned)
-            continue;
-        if (b.minPt.x < b.maxPt.x)
-        {
-            m_visibleBuffer.push_back(b.minPt);
-            m_visibleBuffer.push_back(b.maxPt);
-        }
-        else
-        {
-            m_visibleBuffer.push_back(b.maxPt);
-            m_visibleBuffer.push_back(b.minPt);
-        }
-    }
-
-    return m_visibleBuffer;
+    // Include the nearest raw sample on each side of the range, so the line reaches
+    // the plot edges and stays visible when the view falls between two samples.
+    if (first != raw.begin())
+        out.push_back(*std::prev(first));
+    if (totalVisibleRaw > 0)
+        gatherPoints(level, xMin, xMax, true, true, out);
+    if (last != raw.end())
+        out.push_back(*last);
 }
 
-PlotSeries::Point PlotSeries::getClosestPointToX(double xValue) const
+SampleBuffer::Point SampleBuffer::getClosestPointToX(double xValue) const
 {
     std::lock_guard<std::mutex> lg(m_mutex);
     const auto&                 raw = m_lodLevels[0].points;
@@ -379,7 +332,7 @@ PlotSeries::Point PlotSeries::getClosestPointToX(double xValue) const
     return (std::abs(prevIt->x - xValue) < std::abs(it->x - xValue)) ? *prevIt : *it;
 }
 
-PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double xMax) const
+SampleBuffer::IntervalStats SampleBuffer::calculateIntervalStats(double xMin, double xMax) const
 {
     std::lock_guard<std::mutex> lg(m_mutex);
 

@@ -148,7 +148,7 @@ class MainWindow : public QMainWindow
         connect(btnNewCursor, &QPushButton::clicked, this,
                 [this]() { this->m_plot->addCursor(); });
         connect(btnNewCursorFull, &QPushButton::clicked, this, [this]() {
-            this->m_plot->addCursor(RtpCursor::MarkerStyle::MARKER_FULL);
+            this->m_plot->addCursor(PlotCursor::MarkerStyle::MARKER_FULL);
         });
         connect(btnAddRangeCursor, &QPushButton::clicked, this,
                 [this]() { this->m_plot->setRangeCursorEnable(true); });

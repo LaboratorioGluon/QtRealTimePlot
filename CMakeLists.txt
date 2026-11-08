@@ -81,19 +81,41 @@ else()
 endif()
 
 
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # Project-wide Qt defaults; leave them to the parent project when used as a subdirectory.
+    qt_standard_project_setup()
+endif()
+
 # ============================================================
 # Library target
 # ============================================================
 add_library(realtimeplot STATIC
+    # Public API
     include/RealtimePlot.h
-    src/PlotSeries.cpp
+    include/SampleBuffer.h
+    include/PlotSeries.h
+    include/PlotView.h
+    include/PlotAxis.h
+    include/PlotOverlay.h
+    include/PlotCursor.h
+    include/PlotRangeCursor.h
+    include/PlotLegend.h
+    # Widget
+    src/RealtimePlot.cpp
+    src/RealtimePlotInput.cpp
+    # Data and view
+    src/SampleBuffer.cpp
+    src/PlotView.cpp
     src/PlotAxis.cpp
-    src/RealtimePlot_init.cpp
-    src/RealtimePlot_paint2.cpp
-    src/RealtimePlot_input.cpp
-    src/components/RtpLegend.cpp
-    src/components/RtpCursor.cpp
-    src/components/RtpRangeCursor.cpp
+    # Rendering (internal)
+    src/PlotRenderer.h
+    src/PlotRenderer.cpp
+    src/Decimation.h
+    src/Decimation.cpp
+    # Overlays
+    src/PlotCursor.cpp
+    src/PlotRangeCursor.cpp
+    src/PlotLegend.cpp
 )
 
 if(CPPCHECK_PATH AND ENABLE_CPPCHECK)
@@ -129,23 +151,33 @@ target_link_libraries(realtimeplot
 )
 
 # ============================================================
-# Example executable
+# Example and tests (built by default only when this is the top-level project)
 # ============================================================
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(RTP_TOP_LEVEL ON)
+else()
+    set(RTP_TOP_LEVEL OFF)
+endif()
 
-qt_standard_project_setup()
+option(RTP_BUILD_EXAMPLES "Build the realtimeplot demo application" ${RTP_TOP_LEVEL})
+option(RTP_BUILD_TESTS "Build the realtimeplot unit tests" ${RTP_TOP_LEVEL})
 
+if(RTP_BUILD_EXAMPLES)
+    add_executable(realtimeplot_demo
+        example/main.cpp
+    )
+    target_compile_definitions(realtimeplot_demo PRIVATE
+        $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
+    )
+    target_link_libraries(realtimeplot_demo
+        PRIVATE realtimeplot ${QT_LIBS}
+    )
+endif()
 
-
-add_executable(realtimeplot_demo
-    example/main.cpp
-)
-target_compile_definitions(realtimeplot_demo PRIVATE
-    $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
-)
-
-target_link_libraries(realtimeplot_demo
-    PRIVATE realtimeplot ${QT_LIBS}
-)
+if(RTP_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 # ============================================================
 # Install rules (optional)
