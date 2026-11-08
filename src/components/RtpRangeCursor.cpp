@@ -1,5 +1,6 @@
 #include "components/RtpRangeCursor.h"
 
+#include <QDebug>
 #include <QPainterPath>
 
 RtpRangeCursor::RtpRangeCursor(int index, QColor color, RtpCursor::MarkerStyle style)
@@ -30,13 +31,16 @@ RtpCursor* RtpRangeCursor::mousePressEvent(QMouseEvent* event, int currentPixelS
 
     if (m_cStart.mousePressEvent(event, currentPixelStart))
     {
-
+#ifdef RTP_ENABLE_DEBUG
         qDebug() << "Activated start!";
+#endif
         return &m_cStart;
     }
     if (m_cEnd.mousePressEvent(event, currentPixelEnd))
     {
+#ifdef RTP_ENABLE_DEBUG
         qDebug() << "Activated end!";
+#endif
         return &m_cEnd;
     }
 

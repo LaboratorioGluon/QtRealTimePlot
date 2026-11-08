@@ -62,10 +62,11 @@ void RtpCursor::drawFullMarker(QPainter& painter, const QRect& plotArea, int cal
 {
 
     QFontMetrics fm(m_font);
-    int          lineHeight = fm.height();
-    int          padding    = 4;
+    int          lineHeight  = fm.height();
+    int          padding     = 4;
+    const int    seriesCount = m_seriesRef ? static_cast<int>(m_seriesRef->size()) : 0;
 
-    int boxHeight = padding * 2 + lineHeight * (1 + m_seriesRef->size()) + (m_seriesRef->size() * 2);
+    int boxHeight = padding * 2 + lineHeight * (1 + seriesCount) + (seriesCount * 2);
     int boxWidth  = 120;
 
     int boxX    = alignLeft ? (calculatedPixelX - boxWidth) : calculatedPixelX;
@@ -83,14 +84,18 @@ void RtpCursor::drawFullMarker(QPainter& painter, const QRect& plotArea, int cal
         QRect(textX, plotArea.top() + 5 + padding, alignLeft ? -boxWidth : boxWidth, lineHeight).normalized(),
         alignment, QString("M%1").arg(m_cursorIndex));
 
-    int index = 1;
+    if (!m_seriesRef)
+        return;
+
+    const QString suffix = m_unit.isEmpty() ? QString() : QStringLiteral(" ") + m_unit;
+    int           index  = 1;
     for (const auto& s : *m_seriesRef)
     {
         painter.setPen(s->color());
         painter.drawText(QRect(textX, plotArea.top() + 5 + padding + (lineHeight + 2) * index++,
                                alignLeft ? -boxWidth : boxWidth, lineHeight)
                              .normalized(),
-                         alignment, QString("%1 pA").arg(s->getClosestPointToX(m_xPos).y, 0, 'f', 2));
+                         alignment, QString::number(s->getClosestPointToX(m_xPos).y, 'f', 2) + suffix);
     }
 }
 

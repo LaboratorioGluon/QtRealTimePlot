@@ -1,46 +1,99 @@
 #include "PlotSeries.h"
 
-#include <QOpenGLContext>
+#include <algorithm>
+#include <cmath>
 
-PlotSeries::PlotSeries(QString name, QColor color) : m_name(std::move(name)), m_color(color)
+namespace {
+
+template <typename Container>
+auto lowerByX(const Container& c, double x)
 {
-    m_lodLevels.resize(NUM_LOD_LEVELS);
+    return std::lower_bound(c.begin(), c.end(), x, [](const PlotSeries::Point& p, double v) { return p.x < v; });
 }
 
-void PlotSeries::pushPoint(double x, double y)
+template <typename Container>
+auto upperByX(const Container& c, double x)
 {
-    pushPoint({x, y});
+    return std::upper_bound(c.begin(), c.end(), x, [](double v, const PlotSeries::Point& p) { return v < p.x; });
 }
 
-void PlotSeries::pushPoint(const Point& p)
+}  // namespace
+
+PlotSeries::PlotSeries(QString name, QColor color, size_t maxPoints)
+    : m_maxPoints(maxPoints), m_name(std::move(name)), m_color(color)
+{}
+
+bool PlotSeries::pushPoint(double x, double y)
 {
-    std::lock_guard<std::mutex> lg(m_mutex);
-    m_lodLevels[0].points.push_back(p);
-    updateBounds(p);
+    return pushPoint(Point{x, y});
+}
 
-    m_points.push_back(p);
-    updateBounds(p);
-
-    if (m_lodLevels[0].points.size() - m_lodLevels[1].lastProcessedCrudeSize >= 1000)
+bool PlotSeries::pushPoint(const Point& p)
+{
+    if (!std::isfinite(p.x) || !std::isfinite(p.y))
     {
-        updateLodLevels();
+        ++m_dropped;
+        return false;
     }
+
+    std::lock_guard<std::mutex> lg(m_mutex);
+
+    auto& raw = m_lodLevels[0].points;
+    if (!raw.empty() && p.x < raw.back().x)
+    {
+        ++m_dropped;
+        return false;
+    }
+
+    raw.push_back(p);
+    const uint64_t idx = m_lodLevels[0].base + raw.size() - 1;
+
+    while (!m_yMinQueue.empty() && m_yMinQueue.back().second >= p.y)
+        m_yMinQueue.pop_back();
+    m_yMinQueue.emplace_back(idx, p.y);
+
+    while (!m_yMaxQueue.empty() && m_yMaxQueue.back().second <= p.y)
+        m_yMaxQueue.pop_back();
+    m_yMaxQueue.emplace_back(idx, p.y);
+
+    const uint64_t rawEnd  = m_lodLevels[0].base + raw.size();
+    const uint64_t pending = rawEnd - std::max(m_lodLevels[1].nextSource, m_lodLevels[0].base);
+    if (pending >= LOD_FACTOR)
+        updateLodLevels();
+
+    enforceCapacity();
+
+    ++m_version;
+    return true;
 }
 
 void PlotSeries::clear()
 {
     std::lock_guard<std::mutex> lg(m_mutex);
-    m_points.clear();
     for (auto& level : m_lodLevels)
     {
         level.points.clear();
-        level.lastProcessedCrudeSize = 0;
+        level.stats.clear();
+        level.base       = 0;
+        level.nextSource = 0;
     }
-    m_pointsInGPU = 0;
-    m_xMin        = std::numeric_limits<double>::max();
-    m_xMax        = -std::numeric_limits<double>::max();
-    m_yMin        = std::numeric_limits<double>::max();
-    m_yMax        = -std::numeric_limits<double>::max();
+    m_yMinQueue.clear();
+    m_yMaxQueue.clear();
+    ++m_version;
+}
+
+void PlotSeries::setMaxPoints(size_t maxPoints)
+{
+    std::lock_guard<std::mutex> lg(m_mutex);
+    m_maxPoints = maxPoints;
+    enforceCapacity();
+    ++m_version;
+}
+
+size_t PlotSeries::maxPoints() const
+{
+    std::lock_guard<std::mutex> lg(m_mutex);
+    return m_maxPoints;
 }
 
 std::unique_lock<std::mutex> PlotSeries::lock() const
@@ -48,389 +101,339 @@ std::unique_lock<std::mutex> PlotSeries::lock() const
     return std::unique_lock<std::mutex>(m_mutex);
 }
 
-void PlotSeries::updateBounds(const Point& p)
+size_t PlotSeries::size() const
 {
-    if (p.x < m_xMin)
-        m_xMin = p.x;
-    if (p.x > m_xMax)
-        m_xMax = p.x;
-    if (p.y < m_yMin)
-        m_yMin = p.y;
-    if (p.y > m_yMax)
-        m_yMax = p.y;
+    std::lock_guard<std::mutex> lg(m_mutex);
+    return m_lodLevels[0].points.size();
 }
 
-void PlotSeries::recomputeBounds()
+double PlotSeries::xMin() const
 {
-    m_xMin = std::numeric_limits<double>::max();
-    m_xMax = -std::numeric_limits<double>::max();
-    m_yMin = std::numeric_limits<double>::max();
-    m_yMax = -std::numeric_limits<double>::max();
-    for (const auto& p : m_points)
-        updateBounds(p);
+    const auto& raw = m_lodLevels[0].points;
+    return raw.empty() ? std::numeric_limits<double>::max() : raw.front().x;
 }
 
-void PlotSeries::initGLBuffers()
+double PlotSeries::xMax() const
 {
-    if (m_glInitialized)
-        return;
-    initializeOpenGLFunctions();  // Inicializa el d_ptr de esta serie
-
-    m_vao.create();
-    m_vbo.create();
-
-    m_vbo.bind();
-
-    m_vbo.setUsagePattern(QOpenGLBuffer::StreamDraw);
-
-    m_vbo.release();
-
-    m_glInitialized = true;
+    const auto& raw = m_lodLevels[0].points;
+    return raw.empty() ? -std::numeric_limits<double>::max() : raw.back().x;
 }
 
-void PlotSeries::uploadVisiblePoints(const std::vector<NormalizedPoint>& visiblePts)
+double PlotSeries::yMin() const
 {
-    if (!m_glInitialized || visiblePts.empty())
+    return m_yMinQueue.empty() ? std::numeric_limits<double>::max() : m_yMinQueue.front().second;
+}
+
+double PlotSeries::yMax() const
+{
+    return m_yMaxQueue.empty() ? -std::numeric_limits<double>::max() : m_yMaxQueue.front().second;
+}
+
+void PlotSeries::enforceCapacity()
+{
+    auto& L0 = m_lodLevels[0];
+    if (m_maxPoints == 0 || L0.points.size() <= m_maxPoints)
         return;
 
-    qDebug() << "Uploading : " << visiblePts.size();
+    while (L0.points.size() > m_maxPoints)
+    {
+        const uint64_t idx = L0.base;
+        if (!m_yMinQueue.empty() && m_yMinQueue.front().first == idx)
+            m_yMinQueue.pop_front();
+        if (!m_yMaxQueue.empty() && m_yMaxQueue.front().first == idx)
+            m_yMaxQueue.pop_front();
+        L0.points.pop_front();
+        ++L0.base;
+    }
 
-    m_vbo.bind();
-    m_vbo.allocate(visiblePts.data(), static_cast<int>(visiblePts.size() * sizeof(NormalizedPoint)));
-    m_vbo.release();
+    // Trim coarser levels so they never describe evicted samples.
+    auto& L1 = m_lodLevels[1];
+    while (!L1.stats.empty() && L1.stats.front().firstIndex < L0.base)
+        L1.stats.pop_front();
+
+    for (size_t lvl = 1; lvl < NUM_LOD_LEVELS; ++lvl)
+    {
+        auto&        L     = m_lodLevels[lvl];
+        const auto&  below = m_lodLevels[lvl - 1].points;
+        const double front = below.empty() ? std::numeric_limits<double>::max() : below.front().x;
+        while (!L.points.empty() && L.points.front().x < front)
+        {
+            L.points.pop_front();
+            ++L.base;
+        }
+    }
 }
 
-void PlotSeries::destroyGLBuffers()
+void PlotSeries::updateLodLevels()
 {
-    if (!m_glInitialized)
+    // Level 1: min/max + statistics of each block of LOD_FACTOR raw samples.
+    {
+        const auto& L0  = m_lodLevels[0];
+        auto&       L1  = m_lodLevels[1];
+        uint64_t    next = std::max(L1.nextSource, L0.base);
+        const uint64_t end = L0.base + L0.points.size();
+
+        while (end - next >= LOD_FACTOR)
+        {
+            const size_t i      = static_cast<size_t>(next - L0.base);
+            size_t       minIdx = i;
+            size_t       maxIdx = i;
+
+            BlockStats block;
+            block.xStart     = L0.points[i].x;
+            block.xEnd       = L0.points[i + LOD_FACTOR - 1].x;
+            block.min        = std::numeric_limits<double>::max();
+            block.max        = -std::numeric_limits<double>::max();
+            block.sum        = 0.0;
+            block.sumSq      = 0.0;
+            block.count      = LOD_FACTOR;
+            block.firstIndex = next;
+
+            for (size_t k = i; k < i + LOD_FACTOR; ++k)
+            {
+                const double y = L0.points[k].y;
+                if (y < block.min)
+                {
+                    block.min = y;
+                    minIdx    = k;
+                }
+                if (y > block.max)
+                {
+                    block.max = y;
+                    maxIdx    = k;
+                }
+                block.sum += y;
+                block.sumSq += y * y;
+            }
+
+            L1.points.push_back(L0.points[std::min(minIdx, maxIdx)]);
+            L1.points.push_back(L0.points[std::max(minIdx, maxIdx)]);
+            L1.stats.push_back(block);
+            next += LOD_FACTOR;
+        }
+        L1.nextSource = next;
+    }
+
+    // Level 2: min/max of each block of LOD_FACTOR level-1 points.
+    {
+        const auto& L1   = m_lodLevels[1];
+        auto&       L2   = m_lodLevels[2];
+        uint64_t    next = std::max(L2.nextSource, L1.base);
+        const uint64_t end = L1.base + L1.points.size();
+
+        while (end - next >= LOD_FACTOR)
+        {
+            const size_t i      = static_cast<size_t>(next - L1.base);
+            size_t       minIdx = i;
+            size_t       maxIdx = i;
+            for (size_t k = i + 1; k < i + LOD_FACTOR; ++k)
+            {
+                if (L1.points[k].y < L1.points[minIdx].y)
+                    minIdx = k;
+                if (L1.points[k].y > L1.points[maxIdx].y)
+                    maxIdx = k;
+            }
+            L2.points.push_back(L1.points[std::min(minIdx, maxIdx)]);
+            L2.points.push_back(L1.points[std::max(minIdx, maxIdx)]);
+            next += LOD_FACTOR;
+        }
+        L2.nextSource = next;
+    }
+}
+
+void PlotSeries::gatherPoints(size_t level, double lo, double hi, bool loInclusive, bool hiInclusive,
+                              std::vector<Point>& out) const
+{
+    if (lo > hi)
         return;
-    m_vao.destroy();
-    m_vbo.destroy();
-    m_glInitialized = false;
+
+    const auto& pts = m_lodLevels[level].points;
+
+    if (level > 0 && pts.empty())
+    {
+        gatherPoints(level - 1, lo, hi, loInclusive, hiInclusive, out);
+        return;
+    }
+
+    // Region before this level's coverage (e.g. right after old samples were evicted).
+    if (level > 0 && lo < pts.front().x)
+    {
+        const double front = pts.front().x;
+        if (hi < front)
+            gatherPoints(level - 1, lo, hi, loInclusive, hiInclusive, out);
+        else
+            gatherPoints(level - 1, lo, front, loInclusive, false, out);
+    }
+
+    auto first = loInclusive ? lowerByX(pts, lo) : upperByX(pts, lo);
+    auto last  = hiInclusive ? upperByX(pts, hi) : lowerByX(pts, hi);
+    if (first < last)
+        out.insert(out.end(), first, last);
+
+    // Newest samples that have not been folded into this level yet.
+    if (level > 0 && hi > pts.back().x)
+    {
+        const double back = pts.back().x;
+        if (lo > back)
+            gatherPoints(level - 1, lo, hi, loInclusive, hiInclusive, out);
+        else
+            gatherPoints(level - 1, back, hi, false, hiInclusive, out);
+    }
 }
 
 std::vector<PlotSeries::Point>& PlotSeries::getVisiblePoints(double xMin, double xMax, int targetWidth)
 {
-    std::lock_guard<std::mutex> lg(m_mutex);
     m_visibleBuffer.clear();
+    m_gatherBuffer.clear();
 
-    if (m_points.empty() || targetWidth <= 0)
+    if (targetWidth <= 0 || !(xMax > xMin))
         return m_visibleBuffer;
 
-    //const_cast<PlotSeries*>(this)->updateLodLevels();
-
-    const auto& crudePoints  = m_lodLevels[0].points;
-    auto        itStartCrude = std::lower_bound(crudePoints.begin(), crudePoints.end(), xMin,
-                                                [](const Point& p, double val) { return p.x < val; });
-    auto        itEndCrude   = std::upper_bound(crudePoints.begin(), crudePoints.end(), xMax,
-                                                [](double val, const Point& p) { return val < p.x; });
-
-    size_t totalVisibleCrude = std::distance(itStartCrude, itEndCrude);
-    if (totalVisibleCrude == 0)
-        return m_visibleBuffer;
-
-    size_t selectedLevel  = 0;
-    double pointsPerPixel = static_cast<double>(totalVisibleCrude) / targetWidth;
-
-    if (pointsPerPixel > 10000.0)
     {
-        selectedLevel = 2;
-    }
-    else if (pointsPerPixel > 100.0)
-    {
-        selectedLevel = 1;
-    }
-    else
-    {
-        selectedLevel = 0;
+        std::lock_guard<std::mutex> lg(m_mutex);
+        const auto&                 raw = m_lodLevels[0].points;
+        if (raw.empty())
+            return m_visibleBuffer;
+
+        const size_t totalVisibleRaw = std::distance(lowerByX(raw, xMin), upperByX(raw, xMax));
+        if (totalVisibleRaw == 0)
+            return m_visibleBuffer;
+
+        const double pointsPerPixel = static_cast<double>(totalVisibleRaw) / targetWidth;
+        size_t       level          = 0;
+        if (pointsPerPixel > 10000.0)
+            level = 2;
+        else if (pointsPerPixel > 100.0)
+            level = 1;
+
+        gatherPoints(level, xMin, xMax, true, true, m_gatherBuffer);
     }
 
-    // qDebug() << "Level: " << selectedLevel << " Visible: " << totalVisibleCrude << "Density: " << pointsPerPixel;
-
-    const auto& sourcePoints = m_lodLevels[selectedLevel].points;
-
-    auto itStart = std::lower_bound(sourcePoints.begin(), sourcePoints.end(), xMin,
-                                    [](const Point& p, double val) { return p.x < val; });
-    auto itEnd   = std::upper_bound(sourcePoints.begin(), sourcePoints.end(), xMax,
-                                    [](double val, const Point& p) { return val < p.x; });
-
-    size_t totalVisible = std::distance(itStart, itEnd);
-    if (totalVisible == 0)
-        return m_visibleBuffer;
-
-    int maxPointsThreshold = targetWidth * 2;
-    if (totalVisible <= static_cast<size_t>(maxPointsThreshold))
+    // Everything below runs without the lock.
+    const size_t maxPointsThreshold = static_cast<size_t>(targetWidth) * 2;
+    if (m_gatherBuffer.size() <= maxPointsThreshold)
     {
-        m_visibleBuffer.assign(itStart, itEnd);
+        std::swap(m_visibleBuffer, m_gatherBuffer);
         return m_visibleBuffer;
     }
 
-    if (m_visibleBuffer.capacity() < static_cast<size_t>(maxPointsThreshold))
+    m_visibleBuffer.reserve(maxPointsThreshold);
+    m_buckets.assign(static_cast<size_t>(targetWidth), BucketData{});
+
+    const double scale = static_cast<double>(targetWidth) / (xMax - xMin);
+    for (const Point& p : m_gatherBuffer)
     {
-        m_visibleBuffer.reserve(maxPointsThreshold);
-    }
+        int pixelIdx = static_cast<int>((p.x - xMin) * scale);
+        pixelIdx     = std::clamp(pixelIdx, 0, targetWidth - 1);
 
-    double xRange = xMax - xMin;
-    if (xRange <= 0)
-        return m_visibleBuffer;
-
-    double inverseXRangeWithWidth = static_cast<double>(targetWidth) / xRange;
-
-    struct BucketData {
-        Point minPt;
-        Point maxPt;
-        bool  assigned = false;
-    };
-
-    static std::vector<BucketData> buckets;
-    if (buckets.size() != static_cast<size_t>(targetWidth))
-    {
-        buckets.resize(targetWidth);
-    }
-    for (int i = 0; i < targetWidth; ++i)
-        buckets[i].assigned = false;
-
-    for (auto it = itStart; it != itEnd; ++it)
-    {
-
-        int pixelIdx = static_cast<int>((it->x - xMin) * inverseXRangeWithWidth);
-
-        if (pixelIdx < 0)
-            pixelIdx = 0;
-        if (pixelIdx >= targetWidth)
-            pixelIdx = targetWidth - 1;
-
-        BucketData& b = buckets[pixelIdx];
+        BucketData& b = m_buckets[pixelIdx];
         if (!b.assigned)
         {
-            b.minPt    = *it;
-            b.maxPt    = *it;
+            b.minPt    = p;
+            b.maxPt    = p;
             b.assigned = true;
         }
         else
         {
-            if (it->y < b.minPt.y)
-                b.minPt = *it;
-            if (it->y > b.maxPt.y)
-                b.maxPt = *it;
+            if (p.y < b.minPt.y)
+                b.minPt = p;
+            if (p.y > b.maxPt.y)
+                b.maxPt = p;
         }
     }
 
-    for (int i = 0; i < targetWidth; ++i)
+    for (const BucketData& b : m_buckets)
     {
-        if (!buckets[i].assigned)
+        if (!b.assigned)
             continue;
-
-        if (buckets[i].minPt.x < buckets[i].maxPt.x)
+        if (b.minPt.x < b.maxPt.x)
         {
-            m_visibleBuffer.push_back(buckets[i].minPt);
-            m_visibleBuffer.push_back(buckets[i].maxPt);
+            m_visibleBuffer.push_back(b.minPt);
+            m_visibleBuffer.push_back(b.maxPt);
         }
         else
         {
-            m_visibleBuffer.push_back(buckets[i].maxPt);
-            m_visibleBuffer.push_back(buckets[i].minPt);
+            m_visibleBuffer.push_back(b.maxPt);
+            m_visibleBuffer.push_back(b.minPt);
         }
     }
 
     return m_visibleBuffer;
 }
 
-void PlotSeries::updateLodLevels()
+PlotSeries::Point PlotSeries::getClosestPointToX(double xValue) const
 {
-    auto& crude = m_lodLevels[0].points;  // Asumo que m_points y crude tienen los mismos datos
-    auto& lod1  = m_lodLevels[1].points;
+    std::lock_guard<std::mutex> lg(m_mutex);
+    const auto&                 raw = m_lodLevels[0].points;
 
-    size_t startIdx = m_lodLevels[1].lastProcessedCrudeSize;
-    size_t endIdx   = crude.size() - (crude.size() % LOD_FACTOR);
-
-    for (size_t i = startIdx; i < endIdx; i += LOD_FACTOR)
-    {
-        size_t minIdx = i;
-        size_t maxIdx = i;
-
-        BlockStats block;
-        block.xStart = crude[i].x;
-        block.xEnd   = crude[i + LOD_FACTOR - 1].x;
-        block.min    = std::numeric_limits<double>::max();
-        block.max    = -std::numeric_limits<double>::max();
-        block.sum    = 0.0;
-        block.sumSq  = 0.0;
-        block.count  = LOD_FACTOR;
-
-        for (size_t k = 0; k < LOD_FACTOR; ++k)
-        {
-            size_t currentIdx = i + k;
-            double y          = crude[currentIdx].y;
-
-            if (y < block.min)
-                block.min = y;
-            if (y > block.max)
-                block.max = y;
-            block.sum += y;
-            block.sumSq += (y * y);
-
-            if (crude[currentIdx].y < crude[minIdx].y)
-                minIdx = currentIdx;
-            if (crude[currentIdx].y > crude[maxIdx].y)
-                maxIdx = currentIdx;
-        }
-
-        if (minIdx < maxIdx)
-        {
-            lod1.push_back(crude[minIdx]);
-            lod1.push_back(crude[maxIdx]);
-        }
-        else
-        {
-            lod1.push_back(crude[maxIdx]);
-            lod1.push_back(crude[minIdx]);
-        }
-
-        m_lodLevels[1].stats.push_back(block);
-    }
-
-    m_lodLevels[1].lastProcessedCrudeSize = endIdx;
-
-    auto&  lod2      = m_lodLevels[2].points;
-    size_t startIdx2 = m_lodLevels[2].lastProcessedCrudeSize;
-    size_t endIdx2   = lod1.size() - (lod1.size() % LOD_FACTOR);
-
-    for (size_t i = startIdx2; i < endIdx2; i += LOD_FACTOR)
-    {
-        size_t minIdx = i;
-        size_t maxIdx = i;
-        for (size_t k = 1; k < LOD_FACTOR; ++k)
-        {
-            if (lod1[i + k].y < lod1[minIdx].y)
-                minIdx = i + k;
-            if (lod1[i + k].y > lod1[maxIdx].y)
-                maxIdx = i + k;
-        }
-        if (minIdx < maxIdx)
-        {
-            lod2.push_back(lod1[minIdx]);
-            lod2.push_back(lod1[maxIdx]);
-        }
-        else
-        {
-            lod2.push_back(lod1[maxIdx]);
-            lod2.push_back(lod1[minIdx]);
-        }
-    }
-    m_lodLevels[2].lastProcessedCrudeSize = endIdx2;
-}
-
-PlotSeries::Point PlotSeries::getClosestPointToX(double xValue)
-{
-
-    if (m_lodLevels[0].points.empty())
+    if (raw.empty())
         return Point{0.0, 0.0};
 
-    auto it = std::lower_bound(m_lodLevels[0].points.begin(), m_lodLevels[0].points.end(), xValue,
-                               [](const Point& pt, double val) { return pt.x < val; });
-
-    if (it == m_lodLevels[0].points.begin())
-        return m_lodLevels[0].points.front();
-    if (it == m_lodLevels[0].points.end())
-        return m_lodLevels[0].points.back();
+    auto it = lowerByX(raw, xValue);
+    if (it == raw.begin())
+        return raw.front();
+    if (it == raw.end())
+        return raw.back();
 
     auto prevIt = std::prev(it);
-
-    double distCurrent = std::abs(it->x - xValue);
-    double distPrev    = std::abs(prevIt->x - xValue);
-
-    if (distPrev < distCurrent)
-    {
-        return *prevIt;
-    }
-    else
-    {
-        return *it;
-    }
+    return (std::abs(prevIt->x - xValue) < std::abs(it->x - xValue)) ? *prevIt : *it;
 }
 
-PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double xMax)
+PlotSeries::IntervalStats PlotSeries::calculateIntervalStats(double xMin, double xMax) const
 {
-
-    std::unique_lock<std::mutex> lck(m_mutex);
+    std::lock_guard<std::mutex> lg(m_mutex);
 
     IntervalStats res;
-    if (xMin > xMax)
-    {
+    const auto&   L0 = m_lodLevels[0];
+    if (xMin > xMax || L0.points.empty())
         return res;
-    }
+
+    const uint64_t startIdx = L0.base + std::distance(L0.points.begin(), lowerByX(L0.points, xMin));
+    const uint64_t endIdx   = L0.base + std::distance(L0.points.begin(), upperByX(L0.points, xMax));
+
     double totalSum   = 0.0;
     double totalSumSq = 0.0;
     size_t totalCount = 0;
 
-    const auto& lod1       = m_lodLevels[1];
-    const auto& lod0Points = m_lodLevels[0].points;
+    // Whole precomputed blocks inside [startIdx, endIdx).
+    const auto& stats   = m_lodLevels[1].stats;
+    auto        blockIt = std::lower_bound(stats.begin(), stats.end(), startIdx,
+                                           [](const BlockStats& b, uint64_t v) { return b.firstIndex < v; });
 
-    auto itStart = std::lower_bound(lod1.stats.begin(), lod1.stats.end(), xMin,
-                                    [](const BlockStats& b, double val) { return b.xStart < val; });
-
-    auto itEnd = std::upper_bound(lod1.stats.begin(), lod1.stats.end(), xMax,
-                                  [](double val, const BlockStats& b) { return val < b.xEnd; });
-
-    double exactLodXMin = xMax;
-    double exactLodXMax = xMin;
-
-    if (itStart < itEnd && itStart != lod1.stats.end())
+    uint64_t blocksStart = endIdx;
+    uint64_t blocksEnd   = endIdx;
+    if (blockIt != stats.end() && blockIt->firstIndex + blockIt->count <= endIdx)
     {
-        exactLodXMin = itStart->xStart;
-
-        for (auto it = itStart; it != itEnd; ++it)
+        blocksStart = blockIt->firstIndex;
+        for (; blockIt != stats.end() && blockIt->firstIndex + blockIt->count <= endIdx; ++blockIt)
         {
-            if (it->min < res.min)
-                res.min = it->min;
-            if (it->max > res.max)
-                res.max = it->max;
-            totalSum += it->sum;
-            totalSumSq += it->sumSq;
-            totalCount += it->count;
-            exactLodXMax = it->xEnd;
+            res.min = std::min(res.min, blockIt->min);
+            res.max = std::max(res.max, blockIt->max);
+            totalSum += blockIt->sum;
+            totalSumSq += blockIt->sumSq;
+            totalCount += blockIt->count;
+            blocksEnd = blockIt->firstIndex + blockIt->count;
         }
     }
 
-    auto ptStart = std::lower_bound(lod0Points.begin(), lod0Points.end(), xMin,
-                                    [](const Point& pt, double val) { return pt.x < val; });
-    auto ptEnd   = std::upper_bound(lod0Points.begin(), lod0Points.end(), xMax,
-                                    [](double val, const Point& pt) { return val < pt.x; });
-
-    auto processPointRange = [&](auto start, auto end) {
-        for (auto it = start; it != end; ++it)
+    // Raw samples outside the blocks.
+    auto processRaw = [&](uint64_t from, uint64_t to) {
+        for (uint64_t i = from; i < to; ++i)
         {
-            if (it->y < res.min)
-                res.min = it->y;
-            if (it->y > res.max)
-                res.max = it->y;
-            totalSum += it->y;
-            totalSumSq += it->y * it->y;
-            totalCount++;
+            const double y = L0.points[static_cast<size_t>(i - L0.base)].y;
+            res.min        = std::min(res.min, y);
+            res.max        = std::max(res.max, y);
+            totalSum += y;
+            totalSumSq += y * y;
+            ++totalCount;
         }
     };
-
-    if (exactLodXMin < exactLodXMax)
-    {
-
-        auto ptMidStart =
-            std::lower_bound(ptStart, ptEnd, exactLodXMin, [](const Point& pt, double val) { return pt.x < val; });
-        auto ptMidEnd =
-            std::upper_bound(ptMidStart, ptEnd, exactLodXMax, [](double val, const Point& pt) { return val < pt.x; });
-
-        processPointRange(ptStart, ptMidStart);
-        processPointRange(ptMidEnd, ptEnd);
-    }
-    else
-    {
-
-        processPointRange(ptStart, ptEnd);
-    }
+    processRaw(startIdx, blocksStart);
+    processRaw(blocksEnd, endIdx);
 
     if (totalCount > 0)
     {
-        res.numSamples = totalCount;
+        res.numSamples = static_cast<int>(totalCount);
         res.timeDiff   = xMax - xMin;
         res.mean       = totalSum / totalCount;
         res.rms        = std::sqrt(totalSumSq / totalCount);

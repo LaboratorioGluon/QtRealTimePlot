@@ -34,7 +34,12 @@ class RtpRangeCursor
      * @brief Maps the reference data tracking dataset channel lookup collection list.
      * @param series Constant pointer targeting the multi-channel vector stack array.
      */
-    void setSeriesSource(const std::vector<std::shared_ptr<PlotSeries>>* series) { m_seriesRef = series; };
+    void setSeriesSource(const std::vector<std::shared_ptr<PlotSeries>>* series)
+    {
+        m_seriesRef = series;
+        m_cStart.setSeriesSource(series);
+        m_cEnd.setSeriesSource(series);
+    };
 
     /**
      * @brief Adjusts primary text foreground overlay paintbrush color options.

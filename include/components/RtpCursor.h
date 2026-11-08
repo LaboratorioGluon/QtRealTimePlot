@@ -44,6 +44,12 @@ class RtpCursor
     void setSeriesSource(const std::vector<std::shared_ptr<PlotSeries>>* series) { m_seriesRef = series; };
 
     /**
+     * @brief Sets the unit appended to the series values shown by the full marker (e.g. "V").
+     * @param unit Unit text. Empty shows bare values.
+     */
+    void setUnit(const QString& unit) { m_unit = unit; }
+
+    /**
      * @brief Renders the cursor lines, intersection grips, and value tags onto the active view canvas.
      * @param painter Execution handle targeting active drawing canvas context surfaces.
      * @param plotArea Main viewport rectangle coordinate limits scaled in screen pixels.
@@ -140,6 +146,7 @@ class RtpCursor
     QFont  m_font;              /**< Typography attribute profiles mapped onto label strings. */
     QColor m_color;             /**< Base coloring applied across outline rules and vectors. */
     QColor m_bgColor;           /**< Solid background plate color applied behind data popups. */
+    QString m_unit;             /**< Unit appended to values in the full marker. */
 
     QRect m_labelRect;  /**< Interactive geometry container boundaries enclosing value tooltip cards. */
     QRect m_lineHitbox; /**< Oversized virtual selection envelope padding thin lines to simplify target grab clicks. */

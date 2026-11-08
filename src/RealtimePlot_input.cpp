@@ -71,6 +71,8 @@ void RealtimePlot::applyZoom(double factor, QPoint anchor)
         m_yMax = dataAnchor.y() + distTop / factor;
     }
 
+    enforceMinSpan(m_xMin, m_xMax);
+    enforceMinSpan(m_yMin, m_yMax);
     emitViewChanged();
     update();
 }
@@ -119,22 +121,26 @@ void RealtimePlot::mousePressEvent(QMouseEvent* event)
         int pxStart       = dataToPixel(m_cursorRange.getPosStart(), m_yMin).x();
         int pxEnd         = dataToPixel(m_cursorRange.getPosEnd(), m_yMin).x();
         m_activeCursorRef = m_cursorRange.mousePressEvent(event, pxStart, pxEnd);
+        if (m_activeCursorRef)
+        {
+            update();
+            event->accept();
+            return;
+        }
     }
 
-    if (m_activeCursor != CursorType::None)
-    {
-        event->accept();
-        return;
-    }
+    const bool onXAxis = pos.x() >= area.left() && pos.x() <= area.right() && pos.y() > area.bottom();
+    const bool onYAxis = pos.x() < area.left() && pos.y() >= area.top() && pos.y() <= area.bottom();
 
-    if (event->button() == Qt::LeftButton && area.contains(pos))
+    if (event->button() == Qt::LeftButton && (area.contains(pos) || onXAxis || onYAxis))
     {
-        // Left drag = pan
+        // Left drag = pan. Dragging an axis moves only that axis.
         m_zoomAuto     = false;
         m_panning      = true;
         m_selecting    = false;
         m_lastMousePos = pos;
-        setCursor(Qt::ClosedHandCursor);
+        m_panAxes      = onXAxis ? ZoomMode::XOnly : onYAxis ? ZoomMode::YOnly : m_zoomMode;
+        setCursor(onXAxis ? Qt::SizeHorCursor : onYAxis ? Qt::SizeVerCursor : Qt::ClosedHandCursor);
     }
     else if (event->button() == Qt::RightButton && area.contains(pos))
     {
@@ -148,7 +154,9 @@ void RealtimePlot::mousePressEvent(QMouseEvent* event)
     }
     else if (event->button() == Qt::MiddleButton)
     {
+        m_zoomAuto     = false;
         m_panning      = true;
+        m_panAxes      = m_zoomMode;
         m_lastMousePos = pos;
         setCursor(Qt::ClosedHandCursor);
     }
@@ -188,12 +196,12 @@ void RealtimePlot::mouseMoveEvent(QMouseEvent* event)
         double      dx   = -delta.x() * (m_xMax - m_xMin) / area.width();
         double      dy   = delta.y() * (m_yMax - m_yMin) / area.height();
 
-        if (m_zoomMode != ZoomMode::YOnly)
+        if (m_panAxes != ZoomMode::YOnly)
         {
             m_xMin += dx;
             m_xMax += dx;
         }
-        if (m_zoomMode != ZoomMode::XOnly)
+        if (m_panAxes != ZoomMode::XOnly)
         {
             m_yMin += dy;
             m_yMax += dy;
@@ -269,8 +277,10 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent* event)
 
     if (m_activeCursorRef)
     {
+        m_activeCursorRef->mouseReleaseEvent(event);
         m_cursorRange.checkReorder();
         m_activeCursorRef = nullptr;
+        update();
 
         unsetCursor();
         event->accept();
@@ -313,6 +323,8 @@ void RealtimePlot::mouseReleaseEvent(QMouseEvent* event)
                 m_yMax = newYmax;
             }
 
+            enforceMinSpan(m_xMin, m_xMax);
+            enforceMinSpan(m_yMin, m_yMax);
             emitViewChanged();
         }
 

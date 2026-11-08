@@ -103,15 +103,15 @@ if(CPPCHECK_PATH AND ENABLE_CPPCHECK)
 endif()
 
 if(CLANG_FORMAT_PATH)
-    # Recuperamos las propiedades de los archivos fuentes del target
+    # Opt-in formatting: run `cmake --build <dir> --target realtimeplot-format`.
+    # It is not part of the normal build so builds never modify the sources.
     get_target_property(LYB_SOURCES realtimeplot SOURCES)
-    
-    # Añadimos un comando que se ejecuta antes de compilar el target
-    add_custom_command(
-        TARGET realtimeplot PRE_BUILD
-        COMMAND ${CLANG_FORMAT_PATH} -i -style=file ${LYB_SOURCES}
+    file(GLOB_RECURSE LYB_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
+    add_custom_target(realtimeplot-format
+        COMMAND ${CLANG_FORMAT_PATH} -i -style=file ${LYB_SOURCES} ${LYB_HEADERS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMENT "Formateando archivos de la librería realtimeplot antes de compilar..."
+        COMMENT "Formatting realtimeplot sources with clang-format"
+        VERBATIM
     )
 endif()
 

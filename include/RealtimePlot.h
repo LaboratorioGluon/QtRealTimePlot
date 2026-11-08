@@ -5,11 +5,15 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
+#include <QOpenGLBuffer>
+#include <QOpenGLVertexArrayObject>
 #include <QPoint>
 #include <QRectF>
 #include <QTimer>
 #include <QVector>
+#include <deque>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "PlotAxis.h"
@@ -111,14 +115,14 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      * @brief Dynamically creates and tracks a new plot data channel.
      * @param name Unique label identifier for the series.
      * @param color Default line render color profile (Default: Qt::cyan).
-     * @param maxPoints Upper boundary capacity threshold for internal circular buffer.
+     * @param maxPoints Maximum number of samples kept; older samples are discarded. 0 means unlimited.
      * @return Shared pointer reference to the created PlotSeries instance.
      */
     std::shared_ptr<PlotSeries> addSeries(const QString& name, QColor color = Qt::cyan, size_t maxPoints = 10000);
 
     /**
      * @brief Adds a pre-existing externally built series into the rendering manager.
-     * @param serie Shared pointer reference to the managed plot series.
+     * @param serie Shared pointer reference to the managed plot series. A series may be shown in several plots.
      */
     void addSeries(std::shared_ptr<PlotSeries> serie);
 
@@ -141,8 +145,7 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
     // ------------------------------------------------------------------ cursors
 
     /**
-     * @brief Add cursor in the the center of the current view.
-     * 
+     * @brief Add cursor in the center of the current view.
      * @param style type of cursor to add.
      */
     void addCursor(RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE);
@@ -154,11 +157,30 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      */
     void addCursor(double xPos, RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE);
 
-    void setRangeCursorEnable(bool enable) { m_cursorRange.enable(enable); }
+    /**
+     * @brief Add cursor in position with an explicit color.
+     * @param xPos Position in data coordinates to place the cursor.
+     * @param color Cursor color. An invalid or transparent color picks one from the internal palette.
+     * @param style type of cursor to add.
+     */
+    void addCursor(double xPos, QColor color, RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE);
+
+    /**
+     * @brief Sets the unit appended to the values shown by full-style cursors (e.g. "V", "pA").
+     * @param unit Unit text. Applies to existing and future cursors.
+     */
+    void setCursorUnit(const QString& unit);
+
+    void setRangeCursorEnable(bool enable)
+    {
+        m_cursorRange.enable(enable);
+        update();
+    }
     void setRangeCursorPos(double start, double end)
     {
         m_cursorRange.setPosStart(start);
         m_cursorRange.setPosEnd(end);
+        update();
     };
 
     // ------------------------------------------------------------------ view
@@ -167,10 +189,15 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      * @brief Computes data boundaries and updates viewport range parameters to fit content.
      */
     void autoFit();
+
+    /**
+     * @brief Shows the last rolling-window width of data (see setAutoZoom()).
+     */
     void autoFitRolling();
 
     /**
      * @brief Explicitly overrides limits of the observable data window.
+     * Ranges narrower than the representable precision are widened around their center.
      * @param xMin Lowest bounding value along the X scale.
      * @param xMax Highest bounding value along the X scale.
      * @param yMin Lowest bounding value along the Y scale.
@@ -187,13 +214,13 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
     // ------------------------------------------------------------------ config
 
     /**
-     * @brief Programs the target periodic timer update frequency.
+     * @brief Programs the maximum repaint frequency.
      * @param fps Frames Per Second target (e.g., 60).
      */
     void setRefreshRate(int fps);
 
     /**
-     * @brief Activates the rendering frame clock loop to poll and repaint new data points.
+     * @brief Starts the refresh clock. A frame is only repainted when a series changed.
      */
     void start();
 
@@ -208,55 +235,81 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
     ZoomMode zoomMode() const { return m_zoomMode; }
 
     /** @param g Custom style properties structure payload to write into background grid. */
-    void      setGrid(const GridStyle& g) { m_grid = g; }
+    void setGrid(const GridStyle& g)
+    {
+        m_grid = g;
+        update();
+    }
     /** @return Current active style metadata copy assigned to the grid lines. */
-    GridStyle getGrid() { return m_grid; }
+    GridStyle getGrid() const { return m_grid; }
     /** @param m Custom pixel padding configuration metrics array to isolate axes. */
-    void      setMargins(const MarginPx& m) { m_margin = m; }
+    void setMargins(const MarginPx& m)
+    {
+        m_margin = m;
+        update();
+    }
 
     /** @param c Solid background fill color applied during frame clearing pass. */
-    void setBackgroundColor(QColor c) { m_bgColor = c; }
+    void setBackgroundColor(QColor c)
+    {
+        m_bgColor = c;
+        update();
+    }
     /** @param c Color indicator mapped onto primary axis border rule boundaries. */
-    void setAxisColor(QColor c) { m_axisColor = c; }
+    void setAxisColor(QColor c)
+    {
+        m_axisColor = c;
+        update();
+    }
     /** @param c Master color context parameter applied onto drawing tick numerals. */
-    void setTextColor(QColor c) { m_textColor = c; }
+    void setTextColor(QColor c)
+    {
+        m_textColor = c;
+        update();
+    }
 
     /** @param t Descriptive text string printed globally at the widget crown. */
-    void setTitle(const QString& t) { m_title = t; }
-    /** @param l Unit/description identifier string centered under horizontal axis. */
-    void setXLabel(const QString& l) { m_xLabel = l; }
-    /** @param l Unit/description identifier string mapped near vertical layout line. */
-    void setYLabel(const QString& l) { m_yLabel = l; }
-
-    /**
-     * @brief Adds an analytical marker tracking point onto the plot workspace.
-     * @param xValue Absolute coordinate localization target point value on X scale.
-     * @param color Palette color tag assigned to distinguish marker line (Default: transparent).
-     * @param style Shape layout decoration applied onto cursor anchor target points.
-     */
-    void addCursor(float xValue, QColor color = Qt::transparent,
-                   RtpCursor::MarkerStyle style = RtpCursor::MarkerStyle::MARKER_SIMPLE)
+    void setTitle(const QString& t)
     {
-        m_cursors.push_back(
-            RtpCursor(m_cursors.size(),
-                      color == Qt::transparent ? colorList[m_cursors.size() % (colorList.size())] : color, style));
-    };
+        m_title = t;
+        update();
+    }
+    /** @param l Unit/description identifier string centered under horizontal axis. */
+    void setXLabel(const QString& l)
+    {
+        m_xLabel = l;
+        update();
+    }
+    /** @param l Unit/description identifier string mapped near vertical layout line. */
+    void setYLabel(const QString& l)
+    {
+        m_yLabel = l;
+        update();
+    }
 
     /** @param enable Toggles state of the specialized range cursor subcomponent. */
-    void            enableRangeCursor(bool enable) { m_cursorRange.enable(enable); }
-    /** @return Pointer to internal range validation tracking subcomponent structure. */
+    void enableRangeCursor(bool enable) { setRangeCursorEnable(enable); }
+    /**
+     * @return Pointer to internal range cursor.
+     * @note Call update() after modifying it directly so the change is repainted.
+     */
     RtpRangeCursor* getRangeCursor() { return &m_cursorRange; }
 
     /** @param v Toggles visibility of the interactive serial descriptor panel. */
-    void setLegendVisible(bool v) { m_legendVisible = v; }
+    void setLegendVisible(bool v)
+    {
+        m_legendVisible = v;
+        update();
+    }
 
     /** @param a Sets whether auto-zoom evaluation passes execute automatically.
-     * @param window If different from 0, this defines the rolling window width
+     * @param window If greater than 0, this defines the rolling window width in X units.
      */
-    void setAutoZoom(bool a, uint32_t window = 0)
+    void setAutoZoom(bool a, double window = 0.0)
     {
         m_zoomAuto   = a;
-        m_zoomWindow = window;
+        m_zoomWindow = window > 0.0 ? window : 0.0;
+        update();
     }
     bool autoZoom() const { return m_zoomAuto; }
 
@@ -287,6 +340,16 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
     void keyPressEvent(QKeyEvent* event) override;
 
    private:
+    /**
+     * @struct GpuBuffer
+     * @brief VBO + VAO pair owned by this widget's GL context.
+     */
+    struct GpuBuffer {
+        QOpenGLBuffer            vbo{QOpenGLBuffer::VertexBuffer};
+        QOpenGLVertexArrayObject vao;
+        int                      capacityBytes = 0;
+    };
+
     // Coordinate helpers
 
     /**
@@ -310,14 +373,26 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
      */
     QRect plotArea() const;
 
+    /** @brief Union of the bounds of all visible series. Returns false if there is no data. */
+    bool dataBounds(double& xMin, double& xMax, double& yMin, double& yMax) const;
+
+    /** @brief Widens [lo, hi] if it is narrower than the representable precision. */
+    static void enforceMinSpan(double& lo, double& hi);
+
+    /** @brief Sum of the version counters of all series. */
+    uint64_t dataVersion() const;
+
     // Draw passes
     void drawGrid(const QRect& area, const QVector<PlotAxis::Tick>& xTicks, const QVector<PlotAxis::Tick>& yTicks);
     void drawSeries(const QRect& area);
     void drawAxes(const QRect& area, const QVector<PlotAxis::Tick>& xTicks, const QVector<PlotAxis::Tick>& yTicks);
 
-    // GL primitives (pixel-space coords)
-    void drawLineStrip(const std::vector<float>& verts, QColor color, float width);
-    void drawLines(const std::vector<float>& verts, QColor color, float width);
+    // GL primitives (coordinates normalized to the plot area, [0, 1])
+    void drawPrimitive(GpuBuffer& buf, const float* xy, int vertexCount, GLenum mode, QColor color, float widthPx,
+                       const QRect& area);
+    void uploadToBuffer(GpuBuffer& buf, const void* data, int bytes);
+    GpuBuffer& gpuBufferFor(const PlotSeries* series);
+    void cleanupGL();
 
     void applyZoom(double factor, QPoint anchor);
     void emitViewChanged();
@@ -329,6 +404,7 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
     double m_xMin = 0.0, m_xMax = 1.0; /**< Horizontal observation limit scope metrics. */
     double m_yMin = 0.0, m_yMax = 1.0; /**< Vertical observation limit scope metrics. */
     bool   m_viewInitialized = false;  /**< Safety control flag checking viewport validity. */
+    bool   m_inPaint         = false;  /**< True while paintGL() runs; suppresses re-entrant update() calls. */
 
     // --- Style ---
     QColor    m_bgColor{18, 18, 22};       /**< Viewport baseline core wash clearing background fill color. */
@@ -344,27 +420,33 @@ class RealtimePlot : public QOpenGLWidget, protected QOpenGLFunctions
     // --- Behavior ---
     ZoomMode m_zoomMode   = ZoomMode::XY; /**< Positional scaling locking parameter selection profile. */
     bool     m_zoomAuto   = true;         /**< Automation tracking configuration state override directive. */
-    uint32_t m_zoomWindow = 0;
+    double   m_zoomWindow = 0.0;          /**< Rolling window width in X units (0 = fit all data). */
 
     // --- Interaction ---
     bool   m_panning   = false; /**< Intermittent active click drag translation tracking state indicator. */
+    ZoomMode m_panAxes = ZoomMode::XY; /**< Axes moved by the current pan (XOnly/YOnly when dragging an axis). */
     bool   m_selecting = false; /**< Intermittent active click drag window box boundary select zoom indicator. */
     QPoint m_lastMousePos;      /**< Intermediate tracking position coordinate of historical mouse move cursor event. */
     QPoint m_selStart, m_selEnd; /**< Screen space box boundaries tracking indices for selection boxes. */
 
     // --- GL ---
-    QTimer*               m_timer  = nullptr; /**< Internal refresh loop triggering clock interval execution manager. */
-    QOpenGLShaderProgram* m_shader = nullptr; /**< Compiled OpenGL program binding primitive geometry layout logic. */
-    bool m_shaderReady             = false;   /**< Pipeline validation control flag ensuring compilation stability. */
+    QTimer*               m_timer  = nullptr; /**< Refresh clock; repaints only when data changed. */
+    QOpenGLShaderProgram* m_shader = nullptr; /**< Compiled OpenGL program. */
+    bool     m_shaderReady         = false;   /**< True once the shader program is linked. */
+    float    m_maxLineWidth        = 1.0f;    /**< Widest line the driver can draw natively. */
+    uint64_t m_paintedVersion      = ~uint64_t(0); /**< dataVersion() at the last paint. */
+    std::unordered_map<const PlotSeries*, std::unique_ptr<GpuBuffer>> m_seriesGpu; /**< Per-series GPU buffers. */
+    std::unique_ptr<GpuBuffer> m_overlayGpu;          /**< Buffer for grid, border and ticks. */
+    std::vector<PlotSeries::NormalizedPoint> m_normScratch; /**< Reused per-frame vertex staging. */
+    std::vector<float>                       m_triScratch;  /**< Reused wide-line triangle staging. */
 
     // --- Cursors ---
-    std::vector<RtpCursor> m_cursors;     /**< Extended sequence payload containing dynamic user cursor additions. */
-    RtpRangeCursor         m_cursorRange; /**< Specialized range tracking cursor evaluation context module component. */
+    std::deque<RtpCursor> m_cursors;     /**< User cursors. A deque keeps references stable while adding. */
+    RtpRangeCursor        m_cursorRange; /**< Specialized range tracking cursor evaluation context module component. */
+    QString               m_cursorUnit;  /**< Unit shown by full-style cursors. */
 
     // Drag management
-    /**< Active cursor selection tracking identifier context mode. */
-    CursorType m_activeCursor    = CursorType::None;
-    RtpCursor* m_activeCursorRef = nullptr; /**< Direct memory reference address to dragged object context instance. */
+    RtpCursor* m_activeCursorRef = nullptr; /**< Cursor currently being dragged. */
     const int  m_clickTolerancePixels = 7;  /**< Click bounding halo tolerance scope diameter context scale. */
 
     RtpLegend m_legend; /**< Secondary render presentation layer mapping data streams to labels. */

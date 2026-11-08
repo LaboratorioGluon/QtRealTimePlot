@@ -28,11 +28,11 @@ class DataThread : public QThread
     void run() override
     {
         double       t  = 0.0;
-        const double dt = 1.0 / 1000.0;  // 1 kHz sample rate
+        const double dt = 1.0 / 1000.0;  // X advances 1 ms per sample
 
         while (running)
         {
-            // Push a burst of 10 samples (simulate USB packet)
+            // Push a burst of 100 samples (simulate USB packet)
             for (int i = 0; i < 100; ++i)
             {
                 double v1 = std::sin(2 * M_PI * 10.0 * t) +
@@ -50,7 +50,7 @@ class DataThread : public QThread
             }
 
             emit newData();
-            // Sleep ~10 ms between bursts → ~100 bursts/s → 1000 pts/s total
+            // Sleep ~5 ms between bursts: about 20k samples/s per channel
             QThread::msleep(5);
         }
     }
@@ -85,16 +85,18 @@ class MainWindow : public QMainWindow
 
         // --- Plot ---
         m_plot = new RealtimePlot(this);
-        m_plot->setTitle("Real-time ADC Channels (simulated @ 1 kHz)");
+        m_plot->setTitle("Real-time ADC Channels (simulated, ~20k samples/s)");
         m_plot->setXLabel("Time (s)");
         m_plot->setYLabel("Voltage (V)");
         m_plot->setRefreshRate(60);
 
-        ch1 = m_plot->addSeries("Ch1 - 10 Hz sine", QColor(0, 210, 255), 5000);
-        ch2 =
-            m_plot->addSeries("Ch2 - 5 Hz decaying", QColor(255, 180, 0), 5000);
-        ch3 =
-            m_plot->addSeries("Ch3 - 1 Hz + noise", QColor(80, 255, 120), 5000);
+        m_plot->setCursorUnit("V");
+
+        // Keep all the data.
+        constexpr size_t kCapacity = 0U;
+        ch1 = m_plot->addSeries("Ch1 - 10 Hz sine", QColor(0, 210, 255), kCapacity);
+        ch2 = m_plot->addSeries("Ch2 - 5 Hz decaying", QColor(255, 180, 0), kCapacity);
+        ch3 = m_plot->addSeries("Ch3 - 1 Hz + noise", QColor(80, 255, 120), kCapacity);
         m_plot->start();
 
         vlay->addWidget(m_plot, 1);
@@ -181,7 +183,7 @@ class MainWindow : public QMainWindow
         m_text->setPlainText(QString("Samples: %1").arg(stats.numSamples));
         m_text->appendPlainText(QString("Time: %1").arg(stats.timeDiff));
         m_text->appendPlainText(QString("Mean: %1").arg(stats.mean));
-        m_text->appendPlainText(QString(" Std: %1").arg(stats.rms));
+        m_text->appendPlainText(QString(" RMS: %1").arg(stats.rms));
     }
 
    private:
